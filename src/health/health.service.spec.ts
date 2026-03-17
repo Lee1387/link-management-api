@@ -3,13 +3,25 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../prisma/prisma.service';
 import { HealthService } from './health.service';
 
+type QueryRawMock = jest.Mock<
+  Promise<unknown>,
+  [TemplateStringsArray, ...unknown[]]
+>;
+
+type PrismaQueryExecutor = {
+  $queryRaw: QueryRawMock;
+};
+
 describe('HealthService', () => {
   let healthService: HealthService;
-  let prismaService: { $queryRaw: jest.Mock<Promise<unknown>> };
+  let prismaService: PrismaQueryExecutor;
 
   beforeEach(async () => {
     prismaService = {
-      $queryRaw: jest.fn<Promise<unknown>, [TemplateStringsArray]>(),
+      $queryRaw: jest.fn<
+        Promise<unknown>,
+        [TemplateStringsArray, ...unknown[]]
+      >(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -25,10 +37,20 @@ describe('HealthService', () => {
     healthService = module.get<HealthService>(HealthService);
   });
 
-  it('should report healthy when the database query succeeds', async () => {
+  it('should report alive without querying the database', () => {
+    expect(healthService.getLiveness()).toEqual({
+      status: 'ok',
+      checks: {
+        application: 'up',
+      },
+    });
+    expect(prismaService.$queryRaw).not.toHaveBeenCalled();
+  });
+
+  it('should report ready when the database query succeeds', async () => {
     prismaService.$queryRaw.mockResolvedValue([{ '?column?': 1 }]);
 
-    await expect(healthService.check()).resolves.toEqual({
+    await expect(healthService.getReadiness()).resolves.toEqual({
       status: 'ok',
       checks: {
         database: 'up',
@@ -45,7 +67,7 @@ describe('HealthService', () => {
     expect.assertions(3);
 
     try {
-      await healthService.check();
+      await healthService.getReadiness();
     } catch (exception: unknown) {
       expect(exception).toBeInstanceOf(ServiceUnavailableException);
 

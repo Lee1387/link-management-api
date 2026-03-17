@@ -1,14 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HealthController } from './health.controller';
-import { HealthResponse, HealthService } from './health.service';
+import {
+  LivenessResponse,
+  HealthService,
+  ReadinessResponse,
+} from './health.service';
 
 describe('HealthController', () => {
   let healthController: HealthController;
-  let healthService: { check: jest.Mock<Promise<HealthResponse>> };
+  let healthService: {
+    getLiveness: jest.Mock<LivenessResponse>;
+    getReadiness: jest.Mock<Promise<ReadinessResponse>>;
+  };
 
   beforeEach(async () => {
     healthService = {
-      check: jest.fn<Promise<HealthResponse>, []>(),
+      getLiveness: jest.fn<LivenessResponse, []>(),
+      getReadiness: jest.fn<Promise<ReadinessResponse>, []>(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -24,16 +32,29 @@ describe('HealthController', () => {
     healthController = module.get<HealthController>(HealthController);
   });
 
-  it('should delegate health checks to the health service', async () => {
-    const response: HealthResponse = {
+  it('should delegate liveness checks to the health service', () => {
+    const response: LivenessResponse = {
+      status: 'ok',
+      checks: {
+        application: 'up',
+      },
+    };
+    healthService.getLiveness.mockReturnValue(response);
+
+    expect(healthController.getLiveness()).toEqual(response);
+    expect(healthService.getLiveness).toHaveBeenCalledTimes(1);
+  });
+
+  it('should delegate readiness checks to the health service', async () => {
+    const response: ReadinessResponse = {
       status: 'ok',
       checks: {
         database: 'up',
       },
     };
-    healthService.check.mockResolvedValue(response);
+    healthService.getReadiness.mockResolvedValue(response);
 
-    await expect(healthController.getHealth()).resolves.toEqual(response);
-    expect(healthService.check).toHaveBeenCalledTimes(1);
+    await expect(healthController.getReadiness()).resolves.toEqual(response);
+    expect(healthService.getReadiness).toHaveBeenCalledTimes(1);
   });
 });

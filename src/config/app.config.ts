@@ -1,8 +1,8 @@
 import { type ConfigType, registerAs } from '@nestjs/config';
-import { validateEnv } from './env.schema';
+import { getValidatedEnv } from './env.schema';
 
 const appConfig = registerAs('app', () => {
-  const env = validateEnv(process.env);
+  const env = getValidatedEnv();
 
   return {
     databaseUrl: env.DATABASE_URL,

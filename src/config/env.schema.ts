@@ -13,6 +13,8 @@ export const envSchema = z.object({
 
 export type EnvironmentVariables = z.infer<typeof envSchema>;
 
+let validatedEnvCache: EnvironmentVariables | null = null;
+
 export function validateEnv(
   config: Record<string, unknown>,
 ): EnvironmentVariables {
@@ -26,5 +28,15 @@ export function validateEnv(
     throw new Error(`Invalid environment configuration:\n${issues}`);
   }
 
+  validatedEnvCache = result.data;
+
   return result.data;
+}
+
+export function getValidatedEnv(): EnvironmentVariables {
+  return validatedEnvCache ?? validateEnv(process.env);
+}
+
+export function resetValidatedEnvCache(): void {
+  validatedEnvCache = null;
 }
