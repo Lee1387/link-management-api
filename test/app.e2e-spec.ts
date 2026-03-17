@@ -6,6 +6,10 @@ import {
 import { PrismaService } from './../src/prisma/prisma.service';
 import { AppModule } from './../src/app.module';
 
+process.env.NODE_ENV = 'test';
+process.env.DATABASE_URL =
+  'postgresql://postgres:postgres@localhost:5432/link_management_api?schema=public';
+
 describe('Health (e2e)', () => {
   let app: NestFastifyApplication | null = null;
 

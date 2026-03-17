@@ -7,7 +7,7 @@
     "build": "nest build",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
-    "db:up": "docker compose up -d",
+    "db:up": "docker compose up -d --wait postgres",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "postinstall": "prisma generate",
     "prisma:generate": "prisma generate",

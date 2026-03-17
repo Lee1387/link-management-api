@@ -1,11 +1,9 @@
 import { z } from 'zod';
 
 const nodeEnvSchema = z.enum(['development', 'test', 'production']);
-const defaultDatabaseUrl =
-  'postgresql://postgres:postgres@localhost:5432/link_management_api?schema=public';
 
 export const envSchema = z.object({
-  DATABASE_URL: z.string().url().default(defaultDatabaseUrl),
+  DATABASE_URL: z.string().url(),
   NODE_ENV: nodeEnvSchema.default('development'),
   PORT: z.preprocess(
     (value) => (value === undefined || value === '' ? 3000 : value),
