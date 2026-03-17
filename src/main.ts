@@ -1,3 +1,5 @@
+import { type AppConfig } from './config/app.config';
+import appConfig from './config/app.config';
 import {
   FastifyAdapter,
   NestFastifyApplication,
@@ -10,7 +12,7 @@ async function bootstrap() {
     AppModule,
     new FastifyAdapter(),
   );
-  const port = Number.parseInt(process.env.PORT ?? '3000', 10);
+  const { port } = app.get<AppConfig>(appConfig.KEY);
 
   await app.listen(port, '0.0.0.0');
 }
