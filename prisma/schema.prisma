@@ -10,6 +10,6 @@ model Link {
   id          String   @id @default(cuid())
   originalUrl String   @db.Text
   shortCode   String   @unique @db.VarChar(32)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   DateTime @default(now()) @db.Timestamptz(3)
+  updatedAt   DateTime @updatedAt @db.Timestamptz(3)
 }

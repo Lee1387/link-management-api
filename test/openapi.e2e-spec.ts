@@ -60,7 +60,7 @@ describe('OpenAPI (e2e)', () => {
     const nextApp = moduleFixture.createNestApplication<NestFastifyApplication>(
       new FastifyAdapter(),
     );
-    await configureApp(nextApp);
+    await configureApp(nextApp, 'test');
     setupOpenApi(nextApp);
     await nextApp.init();
     await nextApp.getHttpAdapter().getInstance().ready();

@@ -5,7 +5,7 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { IsString } from 'class-validator';
-import { configureApp } from './../src/app.bootstrap';
+import { configureApp, type RuntimeNodeEnv } from './../src/app.bootstrap';
 
 class CreateValidationDto {
   @IsString()
@@ -41,7 +41,9 @@ describe('Validation (e2e)', () => {
     app = null;
   });
 
-  async function createApp(): Promise<NestFastifyApplication> {
+  async function createApp(
+    nodeEnv: RuntimeNodeEnv = 'test',
+  ): Promise<NestFastifyApplication> {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [ValidationTestModule],
     }).compile();
@@ -49,7 +51,7 @@ describe('Validation (e2e)', () => {
     const nextApp = moduleFixture.createNestApplication<NestFastifyApplication>(
       new FastifyAdapter(),
     );
-    await configureApp(nextApp);
+    await configureApp(nextApp, nodeEnv);
     await nextApp.init();
     await nextApp.getHttpAdapter().getInstance().ready();
 
@@ -105,6 +107,25 @@ describe('Validation (e2e)', () => {
     expect(response.json()).toEqual({
       id: 123,
       type: 'number',
+    });
+  });
+
+  it('should hide validation details in production', async () => {
+    app = await createApp('production');
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/validation-test',
+      payload: {
+        name: 'alpha',
+        unexpected: 'value',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({
+      statusCode: 400,
+      message: 'Bad Request',
     });
   });
 });

@@ -59,7 +59,7 @@ describe('Health (e2e)', () => {
     const nextApp = moduleFixture.createNestApplication<NestFastifyApplication>(
       new FastifyAdapter(),
     );
-    await configureApp(nextApp);
+    await configureApp(nextApp, 'test');
     await nextApp.init();
     await nextApp.getHttpAdapter().getInstance().ready();
 
