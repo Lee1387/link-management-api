@@ -13,5 +13,14 @@ export async function configureApp(app: NestFastifyApplication): Promise<void> {
   );
   await app.register(helmet, {
     global: true,
+    // Nest's Swagger UI needs a looser CSP when served through Fastify.
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: [`'self'`],
+        styleSrc: [`'self'`, `'unsafe-inline'`],
+        imgSrc: [`'self'`, 'data:', 'validator.swagger.io'],
+        scriptSrc: [`'self'`, `'unsafe-inline'`, 'https:'],
+      },
+    },
   });
 }

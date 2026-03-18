@@ -1,22 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { HealthController } from './health.controller';
-import {
-  LivenessResponse,
-  HealthService,
-  ReadinessResponse,
-} from './health.service';
+import { HealthService } from './health.service';
+import { LivenessResponseDto, ReadinessResponseDto } from './health.response';
 
 describe('HealthController', () => {
   let healthController: HealthController;
   let healthService: {
-    getLiveness: jest.Mock<LivenessResponse>;
-    getReadiness: jest.Mock<Promise<ReadinessResponse>>;
+    getLiveness: jest.Mock<LivenessResponseDto>;
+    getReadiness: jest.Mock<Promise<ReadinessResponseDto>>;
   };
 
   beforeEach(async () => {
     healthService = {
-      getLiveness: jest.fn<LivenessResponse, []>(),
-      getReadiness: jest.fn<Promise<ReadinessResponse>, []>(),
+      getLiveness: jest.fn<LivenessResponseDto, []>(),
+      getReadiness: jest.fn<Promise<ReadinessResponseDto>, []>(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -33,7 +30,7 @@ describe('HealthController', () => {
   });
 
   it('should delegate liveness checks to the health service', () => {
-    const response: LivenessResponse = {
+    const response: LivenessResponseDto = {
       status: 'ok',
       checks: {
         application: 'up',
@@ -46,7 +43,7 @@ describe('HealthController', () => {
   });
 
   it('should delegate readiness checks to the health service', async () => {
-    const response: ReadinessResponse = {
+    const response: ReadinessResponseDto = {
       status: 'ok',
       checks: {
         database: 'up',

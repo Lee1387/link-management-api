@@ -7,6 +7,7 @@ import {
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { configureApp } from './app.bootstrap';
+import { setupOpenApi } from './app.openapi';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -14,6 +15,7 @@ async function bootstrap() {
     new FastifyAdapter(),
   );
   await configureApp(app);
+  setupOpenApi(app);
   const { port } = app.get<AppConfig>(appConfig.KEY);
 
   await app.listen(port, '0.0.0.0');

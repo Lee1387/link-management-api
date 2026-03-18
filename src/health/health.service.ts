@@ -1,32 +1,16 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-
-export interface LivenessResponse {
-  status: 'ok';
-  checks: {
-    application: 'up';
-  };
-}
-
-export interface ReadinessResponse {
-  status: 'ok';
-  checks: {
-    database: 'up';
-  };
-}
-
-export interface ReadinessErrorResponse {
-  status: 'error';
-  checks: {
-    database: 'down';
-  };
-}
+import {
+  LivenessResponseDto,
+  ReadinessErrorResponseDto,
+  ReadinessResponseDto,
+} from './health.response';
 
 @Injectable()
 export class HealthService {
   constructor(private readonly prismaService: PrismaService) {}
 
-  getLiveness(): LivenessResponse {
+  getLiveness(): LivenessResponseDto {
     return {
       status: 'ok',
       checks: {
@@ -35,7 +19,7 @@ export class HealthService {
     };
   }
 
-  async getReadiness(): Promise<ReadinessResponse> {
+  async getReadiness(): Promise<ReadinessResponseDto> {
     try {
       await this.prismaService.$queryRaw`SELECT 1`;
 
@@ -46,7 +30,7 @@ export class HealthService {
         },
       };
     } catch {
-      const response: ReadinessErrorResponse = {
+      const response: ReadinessErrorResponseDto = {
         status: 'error',
         checks: {
           database: 'down',
