@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../prisma/prisma.service';
+import { EmailAlreadyInUseError } from '../domain/auth-user.errors';
 import { type CreateAuthUserInput } from '../domain/auth-user.repository';
 import { PrismaUserRepository } from './prisma-user.repository';
 
@@ -123,5 +124,19 @@ describe('PrismaUserRepository', () => {
         email: 'missing@example.com',
       },
     });
+  });
+
+  it('should translate duplicate email errors into a feature error', async () => {
+    const input: CreateAuthUserInput = {
+      email: 'alex@example.com',
+      passwordHash: 'hashed-password',
+    };
+    prismaService.user.create.mockRejectedValue({
+      code: 'P2002',
+    });
+
+    await expect(prismaUserRepository.create(input)).rejects.toThrow(
+      EmailAlreadyInUseError,
+    );
   });
 });

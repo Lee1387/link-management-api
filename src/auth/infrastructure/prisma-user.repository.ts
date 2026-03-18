@@ -2,6 +2,7 @@ import { type User as PrismaUser } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { AuthUser } from '../domain/auth-user.entity';
+import { EmailAlreadyInUseError } from '../domain/auth-user.errors';
 import type {
   AuthUserRepository,
   CreateAuthUserInput,
@@ -17,19 +18,38 @@ function toAuthUser(prismaUser: PrismaUser): AuthUser {
   };
 }
 
+function isPrismaUniqueConstraintError(
+  error: unknown,
+): error is { code: string } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    error.code === 'P2002'
+  );
+}
+
 @Injectable()
 export class PrismaUserRepository implements AuthUserRepository {
   constructor(private readonly prismaService: PrismaService) {}
 
   async create(input: CreateAuthUserInput): Promise<AuthUser> {
-    const prismaUser = await this.prismaService.user.create({
-      data: {
-        email: input.email,
-        passwordHash: input.passwordHash,
-      },
-    });
+    try {
+      const prismaUser = await this.prismaService.user.create({
+        data: {
+          email: input.email,
+          passwordHash: input.passwordHash,
+        },
+      });
 
-    return toAuthUser(prismaUser);
+      return toAuthUser(prismaUser);
+    } catch (error) {
+      if (isPrismaUniqueConstraintError(error)) {
+        throw new EmailAlreadyInUseError();
+      }
+
+      throw error;
+    }
   }
 
   async findByEmail(email: string): Promise<AuthUser | null> {
