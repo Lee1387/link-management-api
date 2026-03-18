@@ -1,17 +1,20 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { CreateLinkUseCase } from './application/create-link.use-case';
+import { ResolveLinkUseCase } from './application/resolve-link.use-case';
 import { SHORT_CODE_GENERATOR } from './application/short-code-generator';
 import { LINK_REPOSITORY } from './domain/link.repository';
+import { LinkRedirectController } from './link-redirect.controller';
 import { PrismaLinkRepository } from './infrastructure/prisma-link.repository';
 import { RandomShortCodeGenerator } from './infrastructure/random-short-code-generator';
 import { LinksController } from './links.controller';
 
 @Module({
-  controllers: [LinksController],
+  controllers: [LinksController, LinkRedirectController],
   imports: [PrismaModule],
   providers: [
     CreateLinkUseCase,
+    ResolveLinkUseCase,
     PrismaLinkRepository,
     RandomShortCodeGenerator,
     {

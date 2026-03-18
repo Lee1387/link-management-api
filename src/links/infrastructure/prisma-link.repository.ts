@@ -51,4 +51,18 @@ export class PrismaLinkRepository implements LinkRepository {
       throw error;
     }
   }
+
+  async findByShortCode(shortCode: string): Promise<Link | null> {
+    const prismaLink = await this.prismaService.link.findUnique({
+      where: {
+        shortCode,
+      },
+    });
+
+    if (prismaLink === null) {
+      return null;
+    }
+
+    return toLinkEntity(prismaLink);
+  }
 }

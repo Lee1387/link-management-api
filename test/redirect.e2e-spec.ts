@@ -4,23 +4,30 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { configureApp } from './../src/app.bootstrap';
-import { setupOpenApi } from './../src/app.openapi';
 import { AppModule } from './../src/app.module';
+import { ResolveLinkUseCase } from './../src/links/application/resolve-link.use-case';
 import { PrismaService } from './../src/prisma/prisma.service';
 
-type QueryRawMock = jest.Mock<
-  Promise<unknown>,
-  [TemplateStringsArray, ...unknown[]]
->;
-
 type PrismaQueryExecutor = {
-  $queryRaw: QueryRawMock;
+  $queryRaw: jest.Mock<Promise<unknown>, [TemplateStringsArray, ...unknown[]]>;
 };
 
-describe('OpenAPI (e2e)', () => {
+describe('Redirect (e2e)', () => {
   const originalNodeEnv = process.env.NODE_ENV;
   const originalDatabaseUrl = process.env.DATABASE_URL;
   let app: NestFastifyApplication | null = null;
+  let resolveLinkUseCase: {
+    execute: jest.Mock<
+      Promise<{
+        id: string;
+        originalUrl: string;
+        shortCode: string;
+        createdAt: Date;
+        updatedAt: Date;
+      } | null>,
+      [string]
+    >;
+  };
 
   beforeAll(() => {
     process.env.NODE_ENV = 'test';
@@ -50,74 +57,85 @@ describe('OpenAPI (e2e)', () => {
   async function createApp(
     prismaService: PrismaQueryExecutor,
   ): Promise<NestFastifyApplication> {
+    resolveLinkUseCase = {
+      execute: jest.fn<
+        Promise<{
+          id: string;
+          originalUrl: string;
+          shortCode: string;
+          createdAt: Date;
+          updatedAt: Date;
+        } | null>,
+        [string]
+      >(),
+    };
+
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
     })
       .overrideProvider(PrismaService)
       .useValue(prismaService)
+      .overrideProvider(ResolveLinkUseCase)
+      .useValue(resolveLinkUseCase)
       .compile();
 
     const nextApp = moduleFixture.createNestApplication<NestFastifyApplication>(
       new FastifyAdapter(),
     );
     await configureApp(nextApp, 'test');
-    setupOpenApi(nextApp);
     await nextApp.init();
     await nextApp.getHttpAdapter().getInstance().ready();
 
     return nextApp;
   }
 
-  it('/docs (GET) should serve the Swagger UI', async () => {
+  it('GET /:shortCode should redirect when the short code exists', async () => {
     app = await createApp({
       $queryRaw: jest.fn<
         Promise<unknown>,
         [TemplateStringsArray, ...unknown[]]
       >(),
     });
+    resolveLinkUseCase.execute.mockResolvedValue({
+      id: 'link_123',
+      originalUrl: 'https://example.com/articles/clean-architecture',
+      shortCode: 'abc123X',
+      createdAt: new Date('2026-03-18T13:10:00.000Z'),
+      updatedAt: new Date('2026-03-18T13:10:00.000Z'),
+    });
 
     const response = await app.inject({
       method: 'GET',
-      url: '/docs',
+      url: '/abc123X',
     });
 
-    expect(response.statusCode).toBe(200);
-    expect(response.headers['content-type']).toContain('text/html');
-    expect(response.body).toContain('id="swagger-ui"');
+    expect(response.statusCode).toBe(302);
+    expect(response.headers.location).toBe(
+      'https://example.com/articles/clean-architecture',
+    );
+    expect(resolveLinkUseCase.execute).toHaveBeenCalledWith('abc123X');
   });
 
-  it('/docs/json (GET) should expose the OpenAPI document', async () => {
+  it('GET /:shortCode should return not found when the short code does not exist', async () => {
     app = await createApp({
       $queryRaw: jest.fn<
         Promise<unknown>,
         [TemplateStringsArray, ...unknown[]]
       >(),
     });
+    resolveLinkUseCase.execute.mockResolvedValue(null);
 
     const response = await app.inject({
       method: 'GET',
-      url: '/docs/json',
+      url: '/missing',
     });
 
-    const body: {
-      info: {
-        title: string;
-        description: string;
-        version: string;
-      };
-      paths: Record<string, unknown>;
-    } = response.json();
-
-    expect(response.statusCode).toBe(200);
-    expect(body.info).toMatchObject({
-      title: 'Link Management API',
-      description:
-        'Backend API for creating, managing, and tracking shortened links.',
-      version: '0.0.1',
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      message: 'Link not found.',
+      error: 'Not Found',
+      statusCode: 404,
     });
-    expect(body.paths).toHaveProperty('/health');
-    expect(body.paths).toHaveProperty('/health/ready');
-    expect(body.paths).toHaveProperty('/links');
-    expect(body.paths).toHaveProperty('/{shortCode}');
+    expect(resolveLinkUseCase.execute).toHaveBeenCalledWith('missing');
   });
 });

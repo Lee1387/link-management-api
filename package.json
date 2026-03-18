@@ -7,6 +7,7 @@
     "build": "nest build",
     "db:down": "docker compose down",
     "db:logs": "docker compose logs -f postgres",
+    "db:setup": "pnpm db:up && pnpm prisma:migrate:deploy",
     "db:up": "docker compose up -d --wait postgres",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "postinstall": "prisma generate",
@@ -20,7 +21,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "pnpm db:setup && jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
     "@fastify/helmet": "13.0.2",

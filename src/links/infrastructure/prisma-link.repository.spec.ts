@@ -18,6 +18,16 @@ describe('PrismaLinkRepository', () => {
         }>,
         [{ data: CreateLinkInput }]
       >;
+      findUnique: jest.Mock<
+        Promise<{
+          id: string;
+          originalUrl: string;
+          shortCode: string;
+          createdAt: Date;
+          updatedAt: Date;
+        } | null>,
+        [{ where: { shortCode: string } }]
+      >;
     };
   };
 
@@ -33,6 +43,16 @@ describe('PrismaLinkRepository', () => {
             updatedAt: Date;
           }>,
           [{ data: CreateLinkInput }]
+        >(),
+        findUnique: jest.fn<
+          Promise<{
+            id: string;
+            originalUrl: string;
+            shortCode: string;
+            createdAt: Date;
+            updatedAt: Date;
+          } | null>,
+          [{ where: { shortCode: string } }]
         >(),
       },
     };
@@ -86,5 +106,38 @@ describe('PrismaLinkRepository', () => {
     await expect(prismaLinkRepository.create(input)).rejects.toThrow(
       DuplicateShortCodeError,
     );
+  });
+
+  it('should resolve a link by short code', async () => {
+    const prismaLink = {
+      id: 'link_123',
+      originalUrl: 'https://example.com/articles/clean-architecture',
+      shortCode: 'abc123X',
+      createdAt: new Date('2026-03-18T13:10:00.000Z'),
+      updatedAt: new Date('2026-03-18T13:10:00.000Z'),
+    };
+    prismaService.link.findUnique.mockResolvedValue(prismaLink);
+
+    await expect(
+      prismaLinkRepository.findByShortCode(prismaLink.shortCode),
+    ).resolves.toEqual(prismaLink);
+    expect(prismaService.link.findUnique).toHaveBeenCalledWith({
+      where: {
+        shortCode: prismaLink.shortCode,
+      },
+    });
+  });
+
+  it('should return null when a short code is not found', async () => {
+    prismaService.link.findUnique.mockResolvedValue(null);
+
+    await expect(prismaLinkRepository.findByShortCode('missing')).resolves.toBe(
+      null,
+    );
+    expect(prismaService.link.findUnique).toHaveBeenCalledWith({
+      where: {
+        shortCode: 'missing',
+      },
+    });
   });
 });
