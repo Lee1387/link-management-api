@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../prisma/prisma.service';
+import { DuplicateShortCodeError } from '../domain/link.errors';
 import { type CreateLinkInput } from '../domain/link.repository';
 import { PrismaLinkRepository } from './prisma-link.repository';
 
@@ -71,5 +72,19 @@ describe('PrismaLinkRepository', () => {
       data: input,
     });
     expect(prismaService.link.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('should translate Prisma unique constraint errors into a feature error', async () => {
+    const input: CreateLinkInput = {
+      originalUrl: 'https://example.com/articles/clean-architecture',
+      shortCode: 'abc123',
+    };
+    prismaService.link.create.mockRejectedValue({
+      code: 'P2002',
+    });
+
+    await expect(prismaLinkRepository.create(input)).rejects.toThrow(
+      DuplicateShortCodeError,
+    );
   });
 });

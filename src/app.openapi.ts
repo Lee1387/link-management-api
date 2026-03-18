@@ -9,6 +9,7 @@ export function setupOpenApi(app: NestFastifyApplication): void {
     )
     .setVersion('0.0.1')
     .addTag('health', 'Operational health and readiness checks')
+    .addTag('links', 'Link creation and management endpoints')
     .build();
 
   const documentFactory = () =>
