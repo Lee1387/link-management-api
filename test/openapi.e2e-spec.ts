@@ -6,7 +6,6 @@ import {
 import { configureApp } from './../src/app.bootstrap';
 import { setupOpenApi } from './../src/app.openapi';
 import { AppModule } from './../src/app.module';
-import { resetValidatedEnvCache } from './../src/config/env.schema';
 import { PrismaService } from './../src/prisma/prisma.service';
 
 type QueryRawMock = jest.Mock<
@@ -27,7 +26,6 @@ describe('OpenAPI (e2e)', () => {
     process.env.NODE_ENV = 'test';
     process.env.DATABASE_URL =
       'postgresql://postgres:postgres@localhost:5432/link_management_api?schema=public';
-    resetValidatedEnvCache();
   });
 
   afterEach(async () => {
@@ -47,8 +45,6 @@ describe('OpenAPI (e2e)', () => {
     } else {
       process.env.DATABASE_URL = originalDatabaseUrl;
     }
-
-    resetValidatedEnvCache();
   });
 
   async function createApp(

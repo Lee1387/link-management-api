@@ -4,7 +4,6 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { configureApp } from './../src/app.bootstrap';
-import { resetValidatedEnvCache } from './../src/config/env.schema';
 import { PrismaService } from './../src/prisma/prisma.service';
 import { AppModule } from './../src/app.module';
 
@@ -26,7 +25,6 @@ describe('Health (e2e)', () => {
     process.env.NODE_ENV = 'test';
     process.env.DATABASE_URL =
       'postgresql://postgres:postgres@localhost:5432/link_management_api?schema=public';
-    resetValidatedEnvCache();
   });
 
   afterEach(async () => {
@@ -46,8 +44,6 @@ describe('Health (e2e)', () => {
     } else {
       process.env.DATABASE_URL = originalDatabaseUrl;
     }
-
-    resetValidatedEnvCache();
   });
 
   async function createApp(
