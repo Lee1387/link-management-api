@@ -117,6 +117,7 @@ describe('OpenAPI (e2e)', () => {
     });
     expect(body.paths).toHaveProperty('/health');
     expect(body.paths).toHaveProperty('/health/ready');
+    expect(body.paths).toHaveProperty('/auth/register');
     expect(body.paths).toHaveProperty('/links');
     expect(body.paths).toHaveProperty('/{shortCode}');
   });

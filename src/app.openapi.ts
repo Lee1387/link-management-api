@@ -8,6 +8,7 @@ export function setupOpenApi(app: NestFastifyApplication): void {
       'Backend API for creating, managing, and tracking shortened links.',
     )
     .setVersion('0.0.1')
+    .addTag('auth', 'Authentication and account registration endpoints')
     .addTag('health', 'Operational health and readiness checks')
     .addTag('links', 'Link creation and management endpoints')
     .addTag('redirects', 'Public short-code resolution endpoints')
