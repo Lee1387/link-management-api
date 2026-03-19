@@ -18,4 +18,30 @@ describe('ScryptPasswordHasher', () => {
 
     expect(firstHash).not.toBe(secondHash);
   });
+
+  it('should verify a correct password against its hash', async () => {
+    const passwordHasher = new ScryptPasswordHasher();
+    const hash = await passwordHasher.hash('my-secure-password');
+
+    await expect(
+      passwordHasher.verify('my-secure-password', hash),
+    ).resolves.toBe(true);
+  });
+
+  it('should reject an incorrect password for a valid hash', async () => {
+    const passwordHasher = new ScryptPasswordHasher();
+    const hash = await passwordHasher.hash('my-secure-password');
+
+    await expect(passwordHasher.verify('wrong-password', hash)).resolves.toBe(
+      false,
+    );
+  });
+
+  it('should reject malformed hashes', async () => {
+    const passwordHasher = new ScryptPasswordHasher();
+
+    await expect(
+      passwordHasher.verify('my-secure-password', 'invalid-hash'),
+    ).resolves.toBe(false);
+  });
 });

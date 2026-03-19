@@ -1,12 +1,12 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import {
-  FastifyAdapter,
-  NestFastifyApplication,
-} from '@nestjs/platform-fastify';
-import { configureApp } from './../src/app.bootstrap';
-import { AppModule } from './../src/app.module';
+import { type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { CreateLinkUseCase } from './../src/links/application/create-link.use-case';
 import { PrismaService } from './../src/prisma/prisma.service';
+import { createTestApp } from './support/create-test-app';
+import {
+  applyTestEnvironment,
+  captureTestEnvironment,
+  restoreTestEnvironment,
+} from './support/test-environment';
 
 type PrismaQueryExecutor = {
   $queryRaw: jest.Mock<Promise<unknown>, [TemplateStringsArray, ...unknown[]]>;
@@ -16,8 +16,7 @@ type PrismaQueryExecutor = {
 };
 
 describe('Links (e2e)', () => {
-  const originalNodeEnv = process.env.NODE_ENV;
-  const originalDatabaseUrl = process.env.DATABASE_URL;
+  const environmentSnapshot = captureTestEnvironment();
   let app: NestFastifyApplication | null = null;
   let createLinkUseCase: {
     execute: jest.Mock<
@@ -33,9 +32,7 @@ describe('Links (e2e)', () => {
   };
 
   beforeAll(() => {
-    process.env.NODE_ENV = 'test';
-    process.env.DATABASE_URL =
-      'postgresql://postgres:postgres@localhost:5432/link_management_api?schema=public';
+    applyTestEnvironment();
   });
 
   afterEach(async () => {
@@ -44,17 +41,7 @@ describe('Links (e2e)', () => {
   });
 
   afterAll(() => {
-    if (originalNodeEnv === undefined) {
-      delete process.env.NODE_ENV;
-    } else {
-      process.env.NODE_ENV = originalNodeEnv;
-    }
-
-    if (originalDatabaseUrl === undefined) {
-      delete process.env.DATABASE_URL;
-    } else {
-      process.env.DATABASE_URL = originalDatabaseUrl;
-    }
+    restoreTestEnvironment(environmentSnapshot);
   });
 
   async function createApp(
@@ -73,23 +60,14 @@ describe('Links (e2e)', () => {
       >(),
     };
 
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    })
-      .overrideProvider(PrismaService)
-      .useValue(prismaService)
-      .overrideProvider(CreateLinkUseCase)
-      .useValue(createLinkUseCase)
-      .compile();
-
-    const nextApp = moduleFixture.createNestApplication<NestFastifyApplication>(
-      new FastifyAdapter(),
-    );
-    await configureApp(nextApp, 'test');
-    await nextApp.init();
-    await nextApp.getHttpAdapter().getInstance().ready();
-
-    return nextApp;
+    return createTestApp({
+      configureBuilder: (builder) =>
+        builder
+          .overrideProvider(PrismaService)
+          .useValue(prismaService)
+          .overrideProvider(CreateLinkUseCase)
+          .useValue(createLinkUseCase),
+    });
   }
 
   it('POST /links should create a short link', async () => {
