@@ -1,4 +1,10 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
+import {
+  ACCESS_TOKEN_VERIFIER,
+  type AccessTokenVerifier,
+  type VerifiedAccessTokenPayload,
+} from './../src/auth/application/access-token-verifier';
+import { InvalidAccessTokenError } from './../src/auth/domain/auth-user.errors';
 import { CreateLinkUseCase } from './../src/links/application/create-link.use-case';
 import { PrismaService } from './../src/prisma/prisma.service';
 import { createTestApp } from './support/create-test-app';
@@ -30,6 +36,9 @@ describe('Links (e2e)', () => {
       [{ originalUrl: string }]
     >;
   };
+  let accessTokenVerifier: {
+    verify: jest.Mock<Promise<VerifiedAccessTokenPayload>, [string]>;
+  };
 
   beforeAll(() => {
     applyTestEnvironment();
@@ -59,12 +68,17 @@ describe('Links (e2e)', () => {
         [{ originalUrl: string }]
       >(),
     };
+    accessTokenVerifier = {
+      verify: jest.fn<Promise<VerifiedAccessTokenPayload>, [string]>(),
+    };
 
     return createTestApp({
       configureBuilder: (builder) =>
         builder
           .overrideProvider(PrismaService)
           .useValue(prismaService)
+          .overrideProvider(ACCESS_TOKEN_VERIFIER)
+          .useValue(accessTokenVerifier satisfies AccessTokenVerifier)
           .overrideProvider(CreateLinkUseCase)
           .useValue(createLinkUseCase),
     });
@@ -80,6 +94,12 @@ describe('Links (e2e)', () => {
         create: jest.fn(),
       },
     });
+    accessTokenVerifier.verify.mockResolvedValue({
+      sub: 'user_123',
+      email: 'alex@example.com',
+      iat: 1,
+      exp: 2,
+    });
     createLinkUseCase.execute.mockResolvedValue({
       id: 'link_123',
       originalUrl: 'https://example.com/articles/clean-architecture',
@@ -91,6 +111,9 @@ describe('Links (e2e)', () => {
     const response = await app.inject({
       method: 'POST',
       url: '/links',
+      headers: {
+        authorization: 'Bearer signed-jwt-token',
+      },
       payload: {
         originalUrl: 'https://example.com/articles/clean-architecture',
       },
@@ -107,9 +130,47 @@ describe('Links (e2e)', () => {
     expect(createLinkUseCase.execute).toHaveBeenCalledWith({
       originalUrl: 'https://example.com/articles/clean-architecture',
     });
+    expect(accessTokenVerifier.verify).toHaveBeenCalledWith('signed-jwt-token');
   });
 
   it('POST /links should reject invalid request bodies', async () => {
+    app = await createApp({
+      $queryRaw: jest.fn<
+        Promise<unknown>,
+        [TemplateStringsArray, ...unknown[]]
+      >(),
+      link: {
+        create: jest.fn(),
+      },
+    });
+    accessTokenVerifier.verify.mockResolvedValue({
+      sub: 'user_123',
+      email: 'alex@example.com',
+      iat: 1,
+      exp: 2,
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/links',
+      headers: {
+        authorization: 'Bearer signed-jwt-token',
+      },
+      payload: {
+        originalUrl: 'not-a-url',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({
+      statusCode: 400,
+      message: ['originalUrl must be a URL address'],
+      error: 'Bad Request',
+    });
+    expect(createLinkUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('POST /links should reject requests without a bearer token', async () => {
     app = await createApp({
       $queryRaw: jest.fn<
         Promise<unknown>,
@@ -124,16 +185,50 @@ describe('Links (e2e)', () => {
       method: 'POST',
       url: '/links',
       payload: {
-        originalUrl: 'not-a-url',
+        originalUrl: 'https://example.com/articles/clean-architecture',
       },
     });
 
-    expect(response.statusCode).toBe(400);
+    expect(response.statusCode).toBe(401);
     expect(response.json()).toEqual({
-      statusCode: 400,
-      message: ['originalUrl must be a URL address'],
-      error: 'Bad Request',
+      message: 'Authentication token is missing.',
+      error: 'Unauthorized',
+      statusCode: 401,
     });
+    expect(accessTokenVerifier.verify).not.toHaveBeenCalled();
+    expect(createLinkUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('POST /links should reject requests with an invalid bearer token', async () => {
+    app = await createApp({
+      $queryRaw: jest.fn<
+        Promise<unknown>,
+        [TemplateStringsArray, ...unknown[]]
+      >(),
+      link: {
+        create: jest.fn(),
+      },
+    });
+    accessTokenVerifier.verify.mockRejectedValue(new InvalidAccessTokenError());
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/links',
+      headers: {
+        authorization: 'Bearer invalid-token',
+      },
+      payload: {
+        originalUrl: 'https://example.com/articles/clean-architecture',
+      },
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({
+      message: 'Authentication token is invalid.',
+      error: 'Unauthorized',
+      statusCode: 401,
+    });
+    expect(accessTokenVerifier.verify).toHaveBeenCalledWith('invalid-token');
     expect(createLinkUseCase.execute).not.toHaveBeenCalled();
   });
 });

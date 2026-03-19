@@ -9,6 +9,7 @@ import {
 
 describe('Links (db e2e)', () => {
   const environmentSnapshot = captureTestEnvironment();
+  const createdEmails = new Set<string>();
   const createdLinkIds = new Set<string>();
   let app: NestFastifyApplication | null = null;
 
@@ -30,6 +31,17 @@ describe('Links (db e2e)', () => {
         });
       }
 
+      if (createdEmails.size > 0) {
+        await prismaService.user.deleteMany({
+          where: {
+            email: {
+              in: [...createdEmails],
+            },
+          },
+        });
+      }
+
+      createdEmails.clear();
       await app.close();
       app = null;
     }
@@ -47,10 +59,36 @@ describe('Links (db e2e)', () => {
 
   it('POST /links should create a short link through the real Prisma-backed flow', async () => {
     app = await createApp();
+    const email = `alex.${Date.now().toString(36)}@example.com`;
+    createdEmails.add(email);
+
+    await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: {
+        email,
+        password: 'my-secure-password',
+      },
+    });
+
+    const loginResponse = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: {
+        email,
+        password: 'my-secure-password',
+      },
+    });
+    const loginBody: {
+      accessToken: unknown;
+    } = loginResponse.json();
 
     const response = await app.inject({
       method: 'POST',
       url: '/links',
+      headers: {
+        authorization: `Bearer ${loginBody.accessToken as string}`,
+      },
       payload: {
         originalUrl: 'https://example.com/articles/clean-architecture',
       },

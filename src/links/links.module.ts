@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AuthModule } from '../auth/auth.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { CreateLinkUseCase } from './application/create-link.use-case';
 import { ResolveLinkUseCase } from './application/resolve-link.use-case';
@@ -11,7 +12,7 @@ import { LinksController } from './links.controller';
 
 @Module({
   controllers: [LinksController, LinkRedirectController],
-  imports: [PrismaModule],
+  imports: [AuthModule, PrismaModule],
   providers: [
     CreateLinkUseCase,
     ResolveLinkUseCase,

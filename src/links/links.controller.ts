@@ -1,10 +1,12 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
   ApiOperation,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { JwtAuthGuard } from '../auth/http/jwt-auth.guard';
 import { CreateLinkUseCase } from './application/create-link.use-case';
 import { CreateLinkDto } from './dto/create-link.dto';
 import { LinkResponseDto, toLinkResponseDto } from './dto/link-response.dto';
@@ -27,6 +29,10 @@ export class LinksController {
   @ApiBadRequestResponse({
     description: 'The request body failed validation.',
   })
+  @ApiUnauthorizedResponse({
+    description: 'A valid bearer token is required to create a short link.',
+  })
+  @UseGuards(JwtAuthGuard)
   async create(@Body() body: CreateLinkDto): Promise<LinkResponseDto> {
     const link = await this.createLinkUseCase.execute({
       originalUrl: body.originalUrl,
