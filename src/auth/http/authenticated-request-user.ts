@@ -4,5 +4,5 @@ export interface AuthenticatedRequestUser {
 }
 
 export interface AuthenticatedRequest {
-  readonly user?: AuthenticatedRequestUser;
+  user?: AuthenticatedRequestUser;
 }

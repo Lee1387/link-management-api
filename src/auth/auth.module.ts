@@ -13,6 +13,7 @@ import { JwtAccessTokenSigner } from './infrastructure/jwt-access-token-signer';
 import { JwtAccessTokenVerifier } from './infrastructure/jwt-access-token-verifier';
 import { PrismaUserRepository } from './infrastructure/prisma-user.repository';
 import { ScryptPasswordHasher } from './infrastructure/scrypt-password-hasher';
+import { JwtAuthGuard } from './http/jwt-auth.guard';
 
 @Module({
   controllers: [AuthController],
@@ -37,6 +38,7 @@ import { ScryptPasswordHasher } from './infrastructure/scrypt-password-hasher';
     ScryptPasswordHasher,
     JwtAccessTokenSigner,
     JwtAccessTokenVerifier,
+    JwtAuthGuard,
     {
       provide: AUTH_USER_REPOSITORY,
       useExisting: PrismaUserRepository,
@@ -54,6 +56,11 @@ import { ScryptPasswordHasher } from './infrastructure/scrypt-password-hasher';
       useExisting: JwtAccessTokenVerifier,
     },
   ],
-  exports: [RegisterUserUseCase, LoginUserUseCase, ACCESS_TOKEN_VERIFIER],
+  exports: [
+    RegisterUserUseCase,
+    LoginUserUseCase,
+    ACCESS_TOKEN_VERIFIER,
+    JwtAuthGuard,
+  ],
 })
 export class AuthModule {}

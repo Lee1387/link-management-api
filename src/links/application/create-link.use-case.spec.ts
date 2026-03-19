@@ -33,7 +33,7 @@ describe('CreateLinkUseCase', () => {
         CreateLinkUseCase,
         {
           provide: LINK_REPOSITORY,
-          useValue: linkRepository satisfies LinkRepository,
+          useValue: linkRepository satisfies Pick<LinkRepository, 'create'>,
         },
         {
           provide: SHORT_CODE_GENERATOR,
