@@ -1,4 +1,5 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
+import { JwtService } from '@nestjs/jwt';
 import { ScryptPasswordHasher } from './../src/auth/infrastructure/scrypt-password-hasher';
 import { PrismaService } from './../src/prisma/prisma.service';
 import { createTestApp } from './support/create-test-app';
@@ -164,13 +165,29 @@ describe('Auth (db e2e)', () => {
     });
 
     const body: {
-      id: unknown;
-      email: unknown;
+      accessToken: unknown;
+      tokenType: unknown;
+      user: {
+        id: unknown;
+        email: unknown;
+      };
     } = response.json();
 
+    const jwtService = app.get(JwtService);
+    const payload = await jwtService.verifyAsync<{
+      sub: string;
+      email: string;
+      iat: number;
+      exp: number;
+    }>(body.accessToken as string);
+
     expect(response.statusCode).toBe(200);
-    expect(typeof body.id).toBe('string');
-    expect(body.email).toBe(email);
+    expect(typeof body.accessToken).toBe('string');
+    expect(body.tokenType).toBe('Bearer');
+    expect(typeof body.user.id).toBe('string');
+    expect(body.user.email).toBe(email);
+    expect(payload.sub).toBe(body.user.id);
+    expect(payload.email).toBe(email);
   });
 
   it('POST /auth/login should return unauthorized when the password is invalid', async () => {

@@ -4,6 +4,11 @@ const nodeEnvSchema = z.enum(['development', 'test', 'production']);
 
 export const envSchema = z.object({
   DATABASE_URL: z.string().url(),
+  JWT_EXPIRES_IN: z.preprocess(
+    (value) => (value === undefined || value === '' ? '15m' : value),
+    z.string().trim().min(1),
+  ),
+  JWT_SECRET: z.string().min(32),
   NODE_ENV: nodeEnvSchema.default('development'),
   PORT: z.preprocess(
     (value) => (value === undefined || value === '' ? 3000 : value),

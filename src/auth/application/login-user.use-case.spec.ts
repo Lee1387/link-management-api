@@ -1,4 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import {
+  ACCESS_TOKEN_SIGNER,
+  type AccessTokenSigner,
+} from './access-token-signer';
 import { LoginUserUseCase } from './login-user.use-case';
 import { PASSWORD_HASHER, type PasswordHasher } from './password-hasher';
 import {
@@ -16,6 +20,9 @@ describe('LoginUserUseCase', () => {
   let passwordHasher: {
     verify: jest.Mock<Promise<boolean>, [string, string]>;
   };
+  let accessTokenSigner: {
+    sign: jest.Mock<Promise<string>, [{ sub: string; email: string }]>;
+  };
 
   beforeEach(async () => {
     authUserRepository = {
@@ -23,6 +30,9 @@ describe('LoginUserUseCase', () => {
     };
     passwordHasher = {
       verify: jest.fn<Promise<boolean>, [string, string]>(),
+    };
+    accessTokenSigner = {
+      sign: jest.fn<Promise<string>, [{ sub: string; email: string }]>(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -38,6 +48,10 @@ describe('LoginUserUseCase', () => {
         {
           provide: PASSWORD_HASHER,
           useValue: passwordHasher satisfies Pick<PasswordHasher, 'verify'>,
+        },
+        {
+          provide: ACCESS_TOKEN_SIGNER,
+          useValue: accessTokenSigner satisfies Pick<AccessTokenSigner, 'sign'>,
         },
       ],
     }).compile();
@@ -55,6 +69,7 @@ describe('LoginUserUseCase', () => {
     };
     authUserRepository.findByEmail.mockResolvedValue(user);
     passwordHasher.verify.mockResolvedValue(true);
+    accessTokenSigner.sign.mockResolvedValue('signed-jwt-token');
 
     await expect(
       loginUserUseCase.execute({
@@ -62,8 +77,12 @@ describe('LoginUserUseCase', () => {
         password: 'my-secure-password',
       }),
     ).resolves.toEqual({
-      id: user.id,
-      email: user.email,
+      accessToken: 'signed-jwt-token',
+      tokenType: 'Bearer',
+      user: {
+        id: user.id,
+        email: user.email,
+      },
     });
     expect(authUserRepository.findByEmail).toHaveBeenCalledWith(
       'alex@example.com',
@@ -72,6 +91,10 @@ describe('LoginUserUseCase', () => {
       'my-secure-password',
       user.passwordHash,
     );
+    expect(accessTokenSigner.sign).toHaveBeenCalledWith({
+      sub: user.id,
+      email: user.email,
+    });
   });
 
   it('should reject when the email does not exist', async () => {
@@ -84,6 +107,7 @@ describe('LoginUserUseCase', () => {
       }),
     ).rejects.toThrow(InvalidCredentialsError);
     expect(passwordHasher.verify).not.toHaveBeenCalled();
+    expect(accessTokenSigner.sign).not.toHaveBeenCalled();
   });
 
   it('should reject when the password is invalid', async () => {
@@ -102,5 +126,6 @@ describe('LoginUserUseCase', () => {
         password: 'wrong-password',
       }),
     ).rejects.toThrow(InvalidCredentialsError);
+    expect(accessTokenSigner.sign).not.toHaveBeenCalled();
   });
 });

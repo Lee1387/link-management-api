@@ -1,4 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
+import {
+  ACCESS_TOKEN_SIGNER,
+  type AccessTokenSigner,
+} from './access-token-signer';
 import { PASSWORD_HASHER, type PasswordHasher } from './password-hasher';
 import {
   AUTH_USER_REPOSITORY,
@@ -12,8 +16,12 @@ export interface LoginUserCommand {
 }
 
 export interface LoginUserResult {
-  readonly id: string;
-  readonly email: string;
+  readonly accessToken: string;
+  readonly tokenType: 'Bearer';
+  readonly user: {
+    readonly id: string;
+    readonly email: string;
+  };
 }
 
 @Injectable()
@@ -23,6 +31,8 @@ export class LoginUserUseCase {
     private readonly authUserRepository: AuthUserRepository,
     @Inject(PASSWORD_HASHER)
     private readonly passwordHasher: PasswordHasher,
+    @Inject(ACCESS_TOKEN_SIGNER)
+    private readonly accessTokenSigner: AccessTokenSigner,
   ) {}
 
   async execute(command: LoginUserCommand): Promise<LoginUserResult> {
@@ -42,9 +52,18 @@ export class LoginUserUseCase {
       throw new InvalidCredentialsError();
     }
 
-    return {
-      id: user.id,
+    const accessToken = await this.accessTokenSigner.sign({
+      sub: user.id,
       email: user.email,
+    });
+
+    return {
+      accessToken,
+      tokenType: 'Bearer',
+      user: {
+        id: user.id,
+        email: user.email,
+      },
     };
   }
 }
