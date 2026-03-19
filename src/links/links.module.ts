@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { CreateLinkUseCase } from './application/create-link.use-case';
+import { GetOwnedLinkDetailsUseCase } from './application/get-owned-link-details.use-case';
 import { ListOwnedLinksUseCase } from './application/list-owned-links.use-case';
 import { ResolveLinkUseCase } from './application/resolve-link.use-case';
 import { SHORT_CODE_GENERATOR } from './application/short-code-generator';
@@ -16,6 +17,7 @@ import { LinksController } from './links.controller';
   imports: [AuthModule, PrismaModule],
   providers: [
     CreateLinkUseCase,
+    GetOwnedLinkDetailsUseCase,
     ListOwnedLinksUseCase,
     ResolveLinkUseCase,
     PrismaLinkRepository,
