@@ -16,6 +16,7 @@ describe('RegisterUserUseCase', () => {
   };
   let passwordHasher: {
     hash: jest.Mock<Promise<string>, [string]>;
+    verify: jest.Mock<Promise<boolean>, [string, string]>;
   };
 
   beforeEach(async () => {
@@ -24,6 +25,7 @@ describe('RegisterUserUseCase', () => {
     };
     passwordHasher = {
       hash: jest.fn<Promise<string>, [string]>(),
+      verify: jest.fn<Promise<boolean>, [string, string]>(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
