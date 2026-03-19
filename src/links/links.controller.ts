@@ -10,8 +10,8 @@ import {
 import { CurrentUser } from '../auth/http/current-user.decorator';
 import { JwtAuthGuard } from '../auth/http/jwt-auth.guard';
 import type { AuthenticatedRequestUser } from '../auth/http/authenticated-request-user';
-import { CreateLinkUseCase } from './application/create-link.use-case';
-import { ListOwnedLinksUseCase } from './application/list-owned-links.use-case';
+import { CreateLinkUseCase } from './application/use-cases/create-link.use-case';
+import { ListOwnedLinksUseCase } from './application/use-cases/list-owned-links.use-case';
 import { CreateLinkDto } from './dto/create-link.dto';
 import { LinkResponseDto, toLinkResponseDto } from './dto/link-response.dto';
 import {

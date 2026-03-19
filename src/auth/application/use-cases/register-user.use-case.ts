@@ -1,10 +1,10 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { PASSWORD_HASHER, type PasswordHasher } from './password-hasher';
+import { PASSWORD_HASHER, type PasswordHasher } from '../ports/password-hasher';
 import {
   AUTH_USER_REPOSITORY,
   type AuthUserRepository,
-} from '../domain/auth-user.repository';
-import type { AuthUser } from '../domain/auth-user.entity';
+} from '../../domain/auth-user.repository';
+import type { AuthUser } from '../../domain/auth-user.entity';
 
 export interface RegisterUserCommand {
   email: string;

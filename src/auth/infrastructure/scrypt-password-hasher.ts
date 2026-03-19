@@ -4,7 +4,7 @@ import {
   timingSafeEqual,
 } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
-import { type PasswordHasher } from '../application/password-hasher';
+import { type PasswordHasher } from '../application/ports/password-hasher';
 
 const SCRYPT_KEY_LENGTH = 64;
 const SCRYPT_COST = 16384;

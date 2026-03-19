@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import {
   type AccessTokenVerifier,
   type VerifiedAccessTokenPayload,
-} from '../application/access-token-verifier';
+} from '../application/ports/access-token-verifier';
 import { InvalidAccessTokenError } from '../domain/auth-user.errors';
 
 function isVerifiedAccessTokenPayload(

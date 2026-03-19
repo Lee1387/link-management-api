@@ -3,7 +3,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import {
   ACCESS_TOKEN_VERIFIER,
   type AccessTokenVerifier,
-} from '../application/access-token-verifier';
+} from '../application/ports/access-token-verifier';
 import { InvalidAccessTokenError } from '../domain/auth-user.errors';
 import { JwtAuthGuard } from './jwt-auth.guard';
 

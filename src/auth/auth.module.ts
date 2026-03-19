@@ -1,12 +1,12 @@
 import { JwtModule, type JwtSignOptions } from '@nestjs/jwt';
 import { Module } from '@nestjs/common';
 import authConfig, { type AuthConfig } from '../config/auth.config';
-import { ACCESS_TOKEN_VERIFIER } from './application/access-token-verifier';
-import { ACCESS_TOKEN_SIGNER } from './application/access-token-signer';
+import { ACCESS_TOKEN_VERIFIER } from './application/ports/access-token-verifier';
+import { ACCESS_TOKEN_SIGNER } from './application/ports/access-token-signer';
 import { PrismaModule } from '../prisma/prisma.module';
-import { LoginUserUseCase } from './application/login-user.use-case';
-import { PASSWORD_HASHER } from './application/password-hasher';
-import { RegisterUserUseCase } from './application/register-user.use-case';
+import { LoginUserUseCase } from './application/use-cases/login-user.use-case';
+import { PASSWORD_HASHER } from './application/ports/password-hasher';
+import { RegisterUserUseCase } from './application/use-cases/register-user.use-case';
 import { AuthController } from './auth.controller';
 import { AUTH_USER_REPOSITORY } from './domain/auth-user.repository';
 import { JwtAccessTokenSigner } from './infrastructure/jwt-access-token-signer';

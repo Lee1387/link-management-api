@@ -3,10 +3,10 @@ import {
   ACCESS_TOKEN_VERIFIER,
   type AccessTokenVerifier,
   type VerifiedAccessTokenPayload,
-} from './../../src/auth/application/access-token-verifier';
+} from './../../src/auth/application/ports/access-token-verifier';
 import { InvalidAccessTokenError } from './../../src/auth/domain/auth-user.errors';
-import { CreateLinkUseCase } from './../../src/links/application/create-link.use-case';
-import { ListOwnedLinksUseCase } from './../../src/links/application/list-owned-links.use-case';
+import { CreateLinkUseCase } from './../../src/links/application/use-cases/create-link.use-case';
+import { ListOwnedLinksUseCase } from './../../src/links/application/use-cases/list-owned-links.use-case';
 import { PrismaService } from './../../src/prisma/prisma.service';
 import { createTestApp } from './../support/create-test-app';
 import {

@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common';
 import {
   type AccessTokenPayload,
   type AccessTokenSigner,
-} from '../application/access-token-signer';
+} from '../application/ports/access-token-signer';
 
 @Injectable()
 export class JwtAccessTokenSigner implements AccessTokenSigner {

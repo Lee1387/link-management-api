@@ -16,8 +16,8 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { LoginUserUseCase } from './application/login-user.use-case';
-import { RegisterUserUseCase } from './application/register-user.use-case';
+import { LoginUserUseCase } from './application/use-cases/login-user.use-case';
+import { RegisterUserUseCase } from './application/use-cases/register-user.use-case';
 import {
   EmailAlreadyInUseError,
   InvalidCredentialsError,

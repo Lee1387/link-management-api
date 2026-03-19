@@ -2,13 +2,13 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   ACCESS_TOKEN_SIGNER,
   type AccessTokenSigner,
-} from './access-token-signer';
-import { PASSWORD_HASHER, type PasswordHasher } from './password-hasher';
+} from '../ports/access-token-signer';
+import { PASSWORD_HASHER, type PasswordHasher } from '../ports/password-hasher';
 import {
   AUTH_USER_REPOSITORY,
   type AuthUserRepository,
-} from '../domain/auth-user.repository';
-import { InvalidCredentialsError } from '../domain/auth-user.errors';
+} from '../../domain/auth-user.repository';
+import { InvalidCredentialsError } from '../../domain/auth-user.errors';
 
 export interface LoginUserCommand {
   email: string;

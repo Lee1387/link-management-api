@@ -8,7 +8,7 @@ import {
 import {
   ACCESS_TOKEN_VERIFIER,
   type AccessTokenVerifier,
-} from '../application/access-token-verifier';
+} from '../application/ports/access-token-verifier';
 import { InvalidAccessTokenError } from '../domain/auth-user.errors';
 import type { AuthenticatedRequest } from './authenticated-request-user';
 

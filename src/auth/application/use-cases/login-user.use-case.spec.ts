@@ -2,15 +2,15 @@ import { Test, TestingModule } from '@nestjs/testing';
 import {
   ACCESS_TOKEN_SIGNER,
   type AccessTokenSigner,
-} from './access-token-signer';
+} from '../ports/access-token-signer';
 import { LoginUserUseCase } from './login-user.use-case';
-import { PASSWORD_HASHER, type PasswordHasher } from './password-hasher';
+import { PASSWORD_HASHER, type PasswordHasher } from '../ports/password-hasher';
 import {
   AUTH_USER_REPOSITORY,
   type AuthUserRepository,
-} from '../domain/auth-user.repository';
-import type { AuthUser } from '../domain/auth-user.entity';
-import { InvalidCredentialsError } from '../domain/auth-user.errors';
+} from '../../domain/auth-user.repository';
+import type { AuthUser } from '../../domain/auth-user.entity';
+import { InvalidCredentialsError } from '../../domain/auth-user.errors';
 
 describe('LoginUserUseCase', () => {
   let loginUserUseCase: LoginUserUseCase;

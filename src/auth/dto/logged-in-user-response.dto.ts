@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import type { LoginUserResult } from '../application/login-user.use-case';
+import type { LoginUserResult } from '../application/use-cases/login-user.use-case';
 
 export class AuthenticatedUserResponseDto {
   @ApiProperty({

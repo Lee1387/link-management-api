@@ -1,6 +1,6 @@
 import { randomInt } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
-import { type ShortCodeGenerator } from '../application/short-code-generator';
+import { type ShortCodeGenerator } from '../application/ports/short-code-generator';
 
 const SHORT_CODE_ALPHABET =
   '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz';

@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { RegisterUserUseCase } from './register-user.use-case';
-import { PASSWORD_HASHER, type PasswordHasher } from './password-hasher';
+import { PASSWORD_HASHER, type PasswordHasher } from '../ports/password-hasher';
 import {
   AUTH_USER_REPOSITORY,
   type AuthUserRepository,
   type CreateAuthUserInput,
-} from '../domain/auth-user.repository';
-import type { AuthUser } from '../domain/auth-user.entity';
-import { EmailAlreadyInUseError } from '../domain/auth-user.errors';
+} from '../../domain/auth-user.repository';
+import type { AuthUser } from '../../domain/auth-user.entity';
+import { EmailAlreadyInUseError } from '../../domain/auth-user.errors';
 
 describe('RegisterUserUseCase', () => {
   let registerUserUseCase: RegisterUserUseCase;
