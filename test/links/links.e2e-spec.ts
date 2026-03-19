@@ -6,6 +6,7 @@ import {
 } from './../../src/auth/application/ports/access-token-verifier';
 import { InvalidAccessTokenError } from './../../src/auth/domain/auth-user.errors';
 import { CreateLinkUseCase } from './../../src/links/application/use-cases/create-link.use-case';
+import { GetOwnedLinkDetailsUseCase } from './../../src/links/application/use-cases/get-owned-link-details.use-case';
 import { ListOwnedLinksUseCase } from './../../src/links/application/use-cases/list-owned-links.use-case';
 import { PrismaService } from './../../src/prisma/prisma.service';
 import { createTestApp } from './../support/create-test-app';
@@ -35,6 +36,18 @@ describe('Links (e2e)', () => {
         updatedAt: Date;
       }>,
       [{ originalUrl: string; userId: string }]
+    >;
+  };
+  let getOwnedLinkDetailsUseCase: {
+    execute: jest.Mock<
+      Promise<{
+        id: string;
+        originalUrl: string;
+        shortCode: string;
+        createdAt: Date;
+        updatedAt: Date;
+      } | null>,
+      [string, string]
     >;
   };
   let listOwnedLinksUseCase: {
@@ -83,6 +96,18 @@ describe('Links (e2e)', () => {
         [{ originalUrl: string; userId: string }]
       >(),
     };
+    getOwnedLinkDetailsUseCase = {
+      execute: jest.fn<
+        Promise<{
+          id: string;
+          originalUrl: string;
+          shortCode: string;
+          createdAt: Date;
+          updatedAt: Date;
+        } | null>,
+        [string, string]
+      >(),
+    };
     listOwnedLinksUseCase = {
       execute: jest.fn<
         Promise<
@@ -108,12 +133,98 @@ describe('Links (e2e)', () => {
           .useValue(prismaService)
           .overrideProvider(ACCESS_TOKEN_VERIFIER)
           .useValue(accessTokenVerifier satisfies AccessTokenVerifier)
+          .overrideProvider(GetOwnedLinkDetailsUseCase)
+          .useValue(getOwnedLinkDetailsUseCase)
           .overrideProvider(ListOwnedLinksUseCase)
           .useValue(listOwnedLinksUseCase)
           .overrideProvider(CreateLinkUseCase)
           .useValue(createLinkUseCase),
     });
   }
+
+  it('GET /links/:id should return the authenticated user owned link details', async () => {
+    app = await createApp({
+      $queryRaw: jest.fn<
+        Promise<unknown>,
+        [TemplateStringsArray, ...unknown[]]
+      >(),
+      link: {
+        create: jest.fn(),
+      },
+    });
+    accessTokenVerifier.verify.mockResolvedValue({
+      sub: 'user_123',
+      email: 'alex@example.com',
+      iat: 1,
+      exp: 2,
+    });
+    getOwnedLinkDetailsUseCase.execute.mockResolvedValue({
+      id: 'link_123',
+      originalUrl: 'https://example.com/articles/clean-architecture',
+      shortCode: 'abc123X',
+      createdAt: new Date('2026-03-18T13:10:00.000Z'),
+      updatedAt: new Date('2026-03-18T13:10:00.000Z'),
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/links/link_123',
+      headers: {
+        authorization: 'Bearer signed-jwt-token',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      id: 'link_123',
+      originalUrl: 'https://example.com/articles/clean-architecture',
+      shortCode: 'abc123X',
+      createdAt: '2026-03-18T13:10:00.000Z',
+      updatedAt: '2026-03-18T13:10:00.000Z',
+    });
+    expect(getOwnedLinkDetailsUseCase.execute).toHaveBeenCalledWith(
+      'link_123',
+      'user_123',
+    );
+  });
+
+  it('GET /links/:id should return not found when the owned link does not exist', async () => {
+    app = await createApp({
+      $queryRaw: jest.fn<
+        Promise<unknown>,
+        [TemplateStringsArray, ...unknown[]]
+      >(),
+      link: {
+        create: jest.fn(),
+      },
+    });
+    accessTokenVerifier.verify.mockResolvedValue({
+      sub: 'user_123',
+      email: 'alex@example.com',
+      iat: 1,
+      exp: 2,
+    });
+    getOwnedLinkDetailsUseCase.execute.mockResolvedValue(null);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/links/missing',
+      headers: {
+        authorization: 'Bearer signed-jwt-token',
+      },
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      message: 'Link not found.',
+      error: 'Not Found',
+      statusCode: 404,
+    });
+    expect(getOwnedLinkDetailsUseCase.execute).toHaveBeenCalledWith(
+      'missing',
+      'user_123',
+    );
+  });
 
   it('GET /links should return the authenticated user owned links', async () => {
     app = await createApp({

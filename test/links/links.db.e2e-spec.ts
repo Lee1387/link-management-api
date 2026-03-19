@@ -232,4 +232,120 @@ describe('Links (db e2e)', () => {
       originalUrl: 'https://example.com/articles/owned-link',
     });
   });
+
+  it('GET /links/:id should return only the authenticated user owned link details', async () => {
+    app = await createApp();
+    const ownerEmail = `owner.${Date.now().toString(36)}@example.com`;
+    const otherEmail = `other.${Date.now().toString(36)}@example.com`;
+    createdEmails.add(ownerEmail);
+    createdEmails.add(otherEmail);
+
+    await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: {
+        email: ownerEmail,
+        password: 'my-secure-password',
+      },
+    });
+    await app.inject({
+      method: 'POST',
+      url: '/auth/register',
+      payload: {
+        email: otherEmail,
+        password: 'my-secure-password',
+      },
+    });
+
+    const ownerLoginResponse = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: {
+        email: ownerEmail,
+        password: 'my-secure-password',
+      },
+    });
+    const ownerLoginBody: {
+      accessToken: string;
+    } = ownerLoginResponse.json();
+
+    const otherLoginResponse = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: {
+        email: otherEmail,
+        password: 'my-secure-password',
+      },
+    });
+    const otherLoginBody: {
+      accessToken: string;
+    } = otherLoginResponse.json();
+
+    const ownerCreateResponse = await app.inject({
+      method: 'POST',
+      url: '/links',
+      headers: {
+        authorization: `Bearer ${ownerLoginBody.accessToken}`,
+      },
+      payload: {
+        originalUrl: 'https://example.com/articles/owned-link-details',
+      },
+    });
+    const ownerLinkBody: {
+      id: string;
+      originalUrl: string;
+    } = ownerCreateResponse.json();
+    createdLinkIds.add(ownerLinkBody.id);
+
+    const otherCreateResponse = await app.inject({
+      method: 'POST',
+      url: '/links',
+      headers: {
+        authorization: `Bearer ${otherLoginBody.accessToken}`,
+      },
+      payload: {
+        originalUrl: 'https://example.com/articles/other-link-details',
+      },
+    });
+    const otherLinkBody: {
+      id: string;
+    } = otherCreateResponse.json();
+    createdLinkIds.add(otherLinkBody.id);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/links/${ownerLinkBody.id}`,
+      headers: {
+        authorization: `Bearer ${ownerLoginBody.accessToken}`,
+      },
+    });
+    const body: {
+      id: unknown;
+      originalUrl: unknown;
+      shortCode: unknown;
+      createdAt: unknown;
+      updatedAt: unknown;
+    } = response.json();
+
+    expect(response.statusCode).toBe(200);
+    expect(body).toMatchObject({
+      id: ownerLinkBody.id,
+      originalUrl: ownerLinkBody.originalUrl,
+    });
+
+    const forbiddenResponse = await app.inject({
+      method: 'GET',
+      url: `/links/${ownerLinkBody.id}`,
+      headers: {
+        authorization: `Bearer ${otherLoginBody.accessToken}`,
+      },
+    });
+
+    expect(forbiddenResponse.statusCode).toBe(404);
+    expect(forbiddenResponse.json()).toEqual({
+      message: 'Link not found.',
+      error: 'Not Found',
+      statusCode: 404,
+    });
+  });
 });

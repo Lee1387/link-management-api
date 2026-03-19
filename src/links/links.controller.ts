@@ -1,9 +1,19 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
+  ApiNotFoundResponse,
   ApiOkResponse,
   ApiOperation,
+  ApiParam,
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
@@ -11,9 +21,14 @@ import { CurrentUser } from '../auth/http/current-user.decorator';
 import { JwtAuthGuard } from '../auth/http/jwt-auth.guard';
 import type { AuthenticatedRequestUser } from '../auth/http/authenticated-request-user';
 import { CreateLinkUseCase } from './application/use-cases/create-link.use-case';
+import { GetOwnedLinkDetailsUseCase } from './application/use-cases/get-owned-link-details.use-case';
 import { ListOwnedLinksUseCase } from './application/use-cases/list-owned-links.use-case';
 import { CreateLinkDto } from './dto/create-link.dto';
 import { LinkResponseDto, toLinkResponseDto } from './dto/link-response.dto';
+import {
+  OwnedLinkDetailsResponseDto,
+  toOwnedLinkDetailsResponseDto,
+} from './dto/owned-link-details-response.dto';
 import {
   OwnedLinkResponseDto,
   toOwnedLinkResponseDtos,
@@ -24,6 +39,7 @@ import {
 export class LinksController {
   constructor(
     private readonly createLinkUseCase: CreateLinkUseCase,
+    private readonly getOwnedLinkDetailsUseCase: GetOwnedLinkDetailsUseCase,
     private readonly listOwnedLinksUseCase: ListOwnedLinksUseCase,
   ) {}
 
@@ -47,6 +63,41 @@ export class LinksController {
     const links = await this.listOwnedLinksUseCase.execute(user.id);
 
     return toOwnedLinkResponseDtos(links);
+  }
+
+  @Get(':id')
+  @ApiOperation({
+    summary: 'Get an authenticated user link',
+    description:
+      'Returns the details of a shortened link owned by the authenticated user.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique identifier of the owned link.',
+    example: 'cm8f4b2zy0000s6m8x2v0q3lp',
+  })
+  @ApiOkResponse({
+    description: 'The owned link was returned successfully.',
+    type: OwnedLinkDetailsResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'The requested owned link does not exist.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'A valid bearer token is required to get owned link details.',
+  })
+  @UseGuards(JwtAuthGuard)
+  async getOwnedDetails(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Param('id') id: string,
+  ): Promise<OwnedLinkDetailsResponseDto> {
+    const link = await this.getOwnedLinkDetailsUseCase.execute(id, user.id);
+
+    if (link === null) {
+      throw new NotFoundException('Link not found.');
+    }
+
+    return toOwnedLinkDetailsResponseDto(link);
   }
 
   @Post()
