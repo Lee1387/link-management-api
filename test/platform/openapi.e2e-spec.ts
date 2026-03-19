@@ -95,6 +95,12 @@ describe('OpenAPI (e2e)', () => {
     expect(body.paths).toHaveProperty('/auth/register');
     expect(body.paths).toHaveProperty('/auth/login');
     expect(body.paths).toHaveProperty('/links');
+    expect(
+      (body.paths['/links'] as Record<string, unknown>) ?? {},
+    ).toHaveProperty('get');
+    expect(
+      (body.paths['/links'] as Record<string, unknown>) ?? {},
+    ).toHaveProperty('post');
     expect(body.paths).toHaveProperty('/{shortCode}');
   });
 });

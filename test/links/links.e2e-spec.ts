@@ -6,6 +6,7 @@ import {
 } from './../../src/auth/application/access-token-verifier';
 import { InvalidAccessTokenError } from './../../src/auth/domain/auth-user.errors';
 import { CreateLinkUseCase } from './../../src/links/application/create-link.use-case';
+import { ListOwnedLinksUseCase } from './../../src/links/application/list-owned-links.use-case';
 import { PrismaService } from './../../src/prisma/prisma.service';
 import { createTestApp } from './../support/create-test-app';
 import {
@@ -34,6 +35,20 @@ describe('Links (e2e)', () => {
         updatedAt: Date;
       }>,
       [{ originalUrl: string; userId: string }]
+    >;
+  };
+  let listOwnedLinksUseCase: {
+    execute: jest.Mock<
+      Promise<
+        Array<{
+          id: string;
+          originalUrl: string;
+          shortCode: string;
+          createdAt: Date;
+          updatedAt: Date;
+        }>
+      >,
+      [string]
     >;
   };
   let accessTokenVerifier: {
@@ -68,6 +83,20 @@ describe('Links (e2e)', () => {
         [{ originalUrl: string; userId: string }]
       >(),
     };
+    listOwnedLinksUseCase = {
+      execute: jest.fn<
+        Promise<
+          Array<{
+            id: string;
+            originalUrl: string;
+            shortCode: string;
+            createdAt: Date;
+            updatedAt: Date;
+          }>
+        >,
+        [string]
+      >(),
+    };
     accessTokenVerifier = {
       verify: jest.fn<Promise<VerifiedAccessTokenPayload>, [string]>(),
     };
@@ -79,10 +108,130 @@ describe('Links (e2e)', () => {
           .useValue(prismaService)
           .overrideProvider(ACCESS_TOKEN_VERIFIER)
           .useValue(accessTokenVerifier satisfies AccessTokenVerifier)
+          .overrideProvider(ListOwnedLinksUseCase)
+          .useValue(listOwnedLinksUseCase)
           .overrideProvider(CreateLinkUseCase)
           .useValue(createLinkUseCase),
     });
   }
+
+  it('GET /links should return the authenticated user owned links', async () => {
+    app = await createApp({
+      $queryRaw: jest.fn<
+        Promise<unknown>,
+        [TemplateStringsArray, ...unknown[]]
+      >(),
+      link: {
+        create: jest.fn(),
+      },
+    });
+    accessTokenVerifier.verify.mockResolvedValue({
+      sub: 'user_123',
+      email: 'alex@example.com',
+      iat: 1,
+      exp: 2,
+    });
+    listOwnedLinksUseCase.execute.mockResolvedValue([
+      {
+        id: 'link_456',
+        originalUrl: 'https://example.com/articles/testing',
+        shortCode: 'new456X',
+        createdAt: new Date('2026-03-19T10:00:00.000Z'),
+        updatedAt: new Date('2026-03-19T10:00:00.000Z'),
+      },
+      {
+        id: 'link_123',
+        originalUrl: 'https://example.com/articles/clean-architecture',
+        shortCode: 'abc123X',
+        createdAt: new Date('2026-03-18T13:10:00.000Z'),
+        updatedAt: new Date('2026-03-18T13:10:00.000Z'),
+      },
+    ]);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/links',
+      headers: {
+        authorization: 'Bearer signed-jwt-token',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual([
+      {
+        id: 'link_456',
+        originalUrl: 'https://example.com/articles/testing',
+        shortCode: 'new456X',
+        createdAt: '2026-03-19T10:00:00.000Z',
+        updatedAt: '2026-03-19T10:00:00.000Z',
+      },
+      {
+        id: 'link_123',
+        originalUrl: 'https://example.com/articles/clean-architecture',
+        shortCode: 'abc123X',
+        createdAt: '2026-03-18T13:10:00.000Z',
+        updatedAt: '2026-03-18T13:10:00.000Z',
+      },
+    ]);
+    expect(listOwnedLinksUseCase.execute).toHaveBeenCalledWith('user_123');
+    expect(accessTokenVerifier.verify).toHaveBeenCalledWith('signed-jwt-token');
+  });
+
+  it('GET /links should reject requests without a bearer token', async () => {
+    app = await createApp({
+      $queryRaw: jest.fn<
+        Promise<unknown>,
+        [TemplateStringsArray, ...unknown[]]
+      >(),
+      link: {
+        create: jest.fn(),
+      },
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/links',
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({
+      message: 'Authentication token is missing.',
+      error: 'Unauthorized',
+      statusCode: 401,
+    });
+    expect(accessTokenVerifier.verify).not.toHaveBeenCalled();
+    expect(listOwnedLinksUseCase.execute).not.toHaveBeenCalled();
+  });
+
+  it('GET /links should reject requests with an invalid bearer token', async () => {
+    app = await createApp({
+      $queryRaw: jest.fn<
+        Promise<unknown>,
+        [TemplateStringsArray, ...unknown[]]
+      >(),
+      link: {
+        create: jest.fn(),
+      },
+    });
+    accessTokenVerifier.verify.mockRejectedValue(new InvalidAccessTokenError());
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/links',
+      headers: {
+        authorization: 'Bearer invalid-token',
+      },
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({
+      message: 'Authentication token is invalid.',
+      error: 'Unauthorized',
+      statusCode: 401,
+    });
+    expect(accessTokenVerifier.verify).toHaveBeenCalledWith('invalid-token');
+    expect(listOwnedLinksUseCase.execute).not.toHaveBeenCalled();
+  });
 
   it('POST /links should create a short link', async () => {
     app = await createApp({
