@@ -1,4 +1,5 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
+import { ScryptPasswordHasher } from './../src/auth/infrastructure/scrypt-password-hasher';
 import { PrismaService } from './../src/prisma/prisma.service';
 import { createTestApp } from './support/create-test-app';
 import {
@@ -122,6 +123,93 @@ describe('Auth (db e2e)', () => {
     const response = await app.inject({
       method: 'POST',
       url: '/auth/register',
+      payload: {
+        email: 'not-an-email',
+        password: 'short',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({
+      statusCode: 400,
+      message: [
+        'email must be an email',
+        'password must be longer than or equal to 8 characters',
+      ],
+      error: 'Bad Request',
+    });
+  });
+
+  it('POST /auth/login should authenticate a user through the real Prisma-backed flow', async () => {
+    app = await createApp();
+    const prismaService = app.get(PrismaService);
+    const passwordHasher = app.get(ScryptPasswordHasher);
+    const email = `alex.${Date.now().toString(36)}@example.com`;
+    createdEmails.add(email);
+
+    await prismaService.user.create({
+      data: {
+        email,
+        passwordHash: await passwordHasher.hash('my-secure-password'),
+      },
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: {
+        email,
+        password: 'my-secure-password',
+      },
+    });
+
+    const body: {
+      id: unknown;
+      email: unknown;
+    } = response.json();
+
+    expect(response.statusCode).toBe(200);
+    expect(typeof body.id).toBe('string');
+    expect(body.email).toBe(email);
+  });
+
+  it('POST /auth/login should return unauthorized when the password is invalid', async () => {
+    app = await createApp();
+    const prismaService = app.get(PrismaService);
+    const passwordHasher = app.get(ScryptPasswordHasher);
+    const email = `alex.${Date.now().toString(36)}@example.com`;
+    createdEmails.add(email);
+
+    await prismaService.user.create({
+      data: {
+        email,
+        passwordHash: await passwordHasher.hash('my-secure-password'),
+      },
+    });
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
+      payload: {
+        email,
+        password: 'wrong-password',
+      },
+    });
+
+    expect(response.statusCode).toBe(401);
+    expect(response.json()).toEqual({
+      message: 'Invalid credentials.',
+      error: 'Unauthorized',
+      statusCode: 401,
+    });
+  });
+
+  it('POST /auth/login should reject invalid request bodies', async () => {
+    app = await createApp();
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/auth/login',
       payload: {
         email: 'not-an-email',
         password: 'short',

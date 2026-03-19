@@ -1,13 +1,32 @@
-import { Body, ConflictException, Controller, Post } from '@nestjs/common';
+import {
+  Body,
+  ConflictException,
+  Controller,
+  HttpCode,
+  HttpStatus,
+  Post,
+  UnauthorizedException,
+} from '@nestjs/common';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
   ApiCreatedResponse,
+  ApiOkResponse,
   ApiOperation,
   ApiTags,
+  ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { LoginUserUseCase } from './application/login-user.use-case';
 import { RegisterUserUseCase } from './application/register-user.use-case';
-import { EmailAlreadyInUseError } from './domain/auth-user.errors';
+import {
+  EmailAlreadyInUseError,
+  InvalidCredentialsError,
+} from './domain/auth-user.errors';
+import { LoginUserDto } from './dto/login-user.dto';
+import {
+  LoggedInUserResponseDto,
+  toLoggedInUserResponseDto,
+} from './dto/logged-in-user-response.dto';
 import { RegisterUserDto } from './dto/register-user.dto';
 import {
   RegisteredUserResponseDto,
@@ -17,7 +36,10 @@ import {
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly registerUserUseCase: RegisterUserUseCase) {}
+  constructor(
+    private readonly registerUserUseCase: RegisterUserUseCase,
+    private readonly loginUserUseCase: LoginUserUseCase,
+  ) {}
 
   @Post('register')
   @ApiOperation({
@@ -47,6 +69,40 @@ export class AuthController {
     } catch (error) {
       if (error instanceof EmailAlreadyInUseError) {
         throw new ConflictException('Email already in use.');
+      }
+
+      throw error;
+    }
+  }
+
+  @Post('login')
+  @ApiOperation({
+    summary: 'Authenticate a user account',
+    description:
+      'Authenticates an existing user account with email and password.',
+  })
+  @ApiOkResponse({
+    description: 'The user credentials were accepted successfully.',
+    type: LoggedInUserResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'The request body failed validation.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'The provided email or password is invalid.',
+  })
+  @HttpCode(HttpStatus.OK)
+  async login(@Body() body: LoginUserDto): Promise<LoggedInUserResponseDto> {
+    try {
+      const user = await this.loginUserUseCase.execute({
+        email: body.email,
+        password: body.password,
+      });
+
+      return toLoggedInUserResponseDto(user);
+    } catch (error) {
+      if (error instanceof InvalidCredentialsError) {
+        throw new UnauthorizedException('Invalid credentials.');
       }
 
       throw error;
