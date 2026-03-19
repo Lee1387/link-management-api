@@ -3,16 +3,16 @@ import {
   ACCESS_TOKEN_VERIFIER,
   type AccessTokenVerifier,
   type VerifiedAccessTokenPayload,
-} from './../src/auth/application/access-token-verifier';
-import { InvalidAccessTokenError } from './../src/auth/domain/auth-user.errors';
-import { CreateLinkUseCase } from './../src/links/application/create-link.use-case';
-import { PrismaService } from './../src/prisma/prisma.service';
-import { createTestApp } from './support/create-test-app';
+} from './../../src/auth/application/access-token-verifier';
+import { InvalidAccessTokenError } from './../../src/auth/domain/auth-user.errors';
+import { CreateLinkUseCase } from './../../src/links/application/create-link.use-case';
+import { PrismaService } from './../../src/prisma/prisma.service';
+import { createTestApp } from './../support/create-test-app';
 import {
   applyTestEnvironment,
   captureTestEnvironment,
   restoreTestEnvironment,
-} from './support/test-environment';
+} from './../support/test-environment';
 
 type PrismaQueryExecutor = {
   $queryRaw: jest.Mock<Promise<unknown>, [TemplateStringsArray, ...unknown[]]>;

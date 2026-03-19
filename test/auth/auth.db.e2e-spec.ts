@@ -1,13 +1,13 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { JwtService } from '@nestjs/jwt';
-import { ScryptPasswordHasher } from './../src/auth/infrastructure/scrypt-password-hasher';
-import { PrismaService } from './../src/prisma/prisma.service';
-import { createTestApp } from './support/create-test-app';
+import { ScryptPasswordHasher } from './../../src/auth/infrastructure/scrypt-password-hasher';
+import { PrismaService } from './../../src/prisma/prisma.service';
+import { createTestApp } from './../support/create-test-app';
 import {
   applyTestEnvironment,
   captureTestEnvironment,
   restoreTestEnvironment,
-} from './support/test-environment';
+} from './../support/test-environment';
 
 describe('Auth (db e2e)', () => {
   const environmentSnapshot = captureTestEnvironment();

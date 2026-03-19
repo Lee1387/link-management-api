@@ -1,12 +1,12 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
-import { ResolveLinkUseCase } from './../src/links/application/resolve-link.use-case';
-import { PrismaService } from './../src/prisma/prisma.service';
-import { createTestApp } from './support/create-test-app';
+import { ResolveLinkUseCase } from './../../src/links/application/resolve-link.use-case';
+import { PrismaService } from './../../src/prisma/prisma.service';
+import { createTestApp } from './../support/create-test-app';
 import {
   applyTestEnvironment,
   captureTestEnvironment,
   restoreTestEnvironment,
-} from './support/test-environment';
+} from './../support/test-environment';
 
 type PrismaQueryExecutor = {
   $queryRaw: jest.Mock<Promise<unknown>, [TemplateStringsArray, ...unknown[]]>;

@@ -1,11 +1,11 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
-import { PrismaService } from './../src/prisma/prisma.service';
-import { createTestApp } from './support/create-test-app';
+import { PrismaService } from './../../src/prisma/prisma.service';
+import { createTestApp } from './../support/create-test-app';
 import {
   applyTestEnvironment,
   captureTestEnvironment,
   restoreTestEnvironment,
-} from './support/test-environment';
+} from './../support/test-environment';
 
 type QueryRawMock = jest.Mock<
   Promise<unknown>,

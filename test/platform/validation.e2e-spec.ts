@@ -5,7 +5,7 @@ import {
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { IsString } from 'class-validator';
-import { configureApp, type RuntimeNodeEnv } from './../src/app.bootstrap';
+import { configureApp, type RuntimeNodeEnv } from './../../src/app.bootstrap';
 
 class CreateValidationDto {
   @IsString()
