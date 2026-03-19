@@ -66,4 +66,17 @@ export class PrismaLinkRepository implements LinkRepository {
 
     return toLinkEntity(prismaLink);
   }
+
+  async findByUserId(userId: string): Promise<Link[]> {
+    const prismaLinks = await this.prismaService.link.findMany({
+      where: {
+        userId,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return prismaLinks.map(toLinkEntity);
+  }
 }

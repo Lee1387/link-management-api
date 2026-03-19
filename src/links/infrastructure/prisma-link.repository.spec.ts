@@ -28,6 +28,18 @@ describe('PrismaLinkRepository', () => {
         } | null>,
         [{ where: { shortCode: string } }]
       >;
+      findMany: jest.Mock<
+        Promise<
+          Array<{
+            id: string;
+            originalUrl: string;
+            shortCode: string;
+            createdAt: Date;
+            updatedAt: Date;
+          }>
+        >,
+        [{ where: { userId: string }; orderBy: { createdAt: 'desc' } }]
+      >;
     };
   };
 
@@ -53,6 +65,18 @@ describe('PrismaLinkRepository', () => {
             updatedAt: Date;
           } | null>,
           [{ where: { shortCode: string } }]
+        >(),
+        findMany: jest.fn<
+          Promise<
+            Array<{
+              id: string;
+              originalUrl: string;
+              shortCode: string;
+              createdAt: Date;
+              updatedAt: Date;
+            }>
+          >,
+          [{ where: { userId: string }; orderBy: { createdAt: 'desc' } }]
         >(),
       },
     };
@@ -139,6 +163,38 @@ describe('PrismaLinkRepository', () => {
     expect(prismaService.link.findUnique).toHaveBeenCalledWith({
       where: {
         shortCode: 'missing',
+      },
+    });
+  });
+
+  it('should resolve links by user id ordered by newest first', async () => {
+    const prismaLinks = [
+      {
+        id: 'link_456',
+        originalUrl: 'https://example.com/articles/testing',
+        shortCode: 'new456X',
+        createdAt: new Date('2026-03-19T10:00:00.000Z'),
+        updatedAt: new Date('2026-03-19T10:00:00.000Z'),
+      },
+      {
+        id: 'link_123',
+        originalUrl: 'https://example.com/articles/clean-architecture',
+        shortCode: 'abc123X',
+        createdAt: new Date('2026-03-18T13:10:00.000Z'),
+        updatedAt: new Date('2026-03-18T13:10:00.000Z'),
+      },
+    ];
+    prismaService.link.findMany.mockResolvedValue(prismaLinks);
+
+    await expect(
+      prismaLinkRepository.findByUserId('user_123'),
+    ).resolves.toEqual(prismaLinks);
+    expect(prismaService.link.findMany).toHaveBeenCalledWith({
+      where: {
+        userId: 'user_123',
+      },
+      orderBy: {
+        createdAt: 'desc',
       },
     });
   });
