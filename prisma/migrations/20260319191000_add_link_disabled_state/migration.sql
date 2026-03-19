@@ -1,0 +1,2 @@
+ALTER TABLE "Link"
+ADD COLUMN "disabledAt" TIMESTAMPTZ(3);
