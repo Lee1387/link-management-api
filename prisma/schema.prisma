@@ -9,6 +9,7 @@ datasource db {
 model User {
   id           String   @id @default(cuid())
   email        String   @unique @db.VarChar(320)
+  links        Link[]
   passwordHash String   @db.VarChar(255)
   createdAt    DateTime @default(now()) @db.Timestamptz(3)
   updatedAt    DateTime @updatedAt @db.Timestamptz(3)
@@ -20,4 +21,8 @@ model Link {
   shortCode   String   @unique @db.VarChar(32)
   createdAt   DateTime @default(now()) @db.Timestamptz(3)
   updatedAt   DateTime @updatedAt @db.Timestamptz(3)
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }
