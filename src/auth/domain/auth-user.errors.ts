@@ -11,3 +11,10 @@ export class InvalidCredentialsError extends Error {
     this.name = 'InvalidCredentialsError';
   }
 }
+
+export class InvalidAccessTokenError extends Error {
+  constructor() {
+    super('The provided access token is invalid.');
+    this.name = 'InvalidAccessTokenError';
+  }
+}
