@@ -79,4 +79,19 @@ export class PrismaLinkRepository implements LinkRepository {
 
     return prismaLinks.map(toLinkEntity);
   }
+
+  async findByIdAndUserId(id: string, userId: string): Promise<Link | null> {
+    const prismaLink = await this.prismaService.link.findFirst({
+      where: {
+        id,
+        userId,
+      },
+    });
+
+    if (prismaLink === null) {
+      return null;
+    }
+
+    return toLinkEntity(prismaLink);
+  }
 }

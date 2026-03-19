@@ -28,6 +28,16 @@ describe('PrismaLinkRepository', () => {
         } | null>,
         [{ where: { shortCode: string } }]
       >;
+      findFirst: jest.Mock<
+        Promise<{
+          id: string;
+          originalUrl: string;
+          shortCode: string;
+          createdAt: Date;
+          updatedAt: Date;
+        } | null>,
+        [{ where: { id: string; userId: string } }]
+      >;
       findMany: jest.Mock<
         Promise<
           Array<{
@@ -65,6 +75,16 @@ describe('PrismaLinkRepository', () => {
             updatedAt: Date;
           } | null>,
           [{ where: { shortCode: string } }]
+        >(),
+        findFirst: jest.fn<
+          Promise<{
+            id: string;
+            originalUrl: string;
+            shortCode: string;
+            createdAt: Date;
+            updatedAt: Date;
+          } | null>,
+          [{ where: { id: string; userId: string } }]
         >(),
         findMany: jest.fn<
           Promise<
@@ -195,6 +215,41 @@ describe('PrismaLinkRepository', () => {
       },
       orderBy: {
         createdAt: 'desc',
+      },
+    });
+  });
+
+  it('should resolve an owned link by id', async () => {
+    const prismaLink = {
+      id: 'link_123',
+      originalUrl: 'https://example.com/articles/clean-architecture',
+      shortCode: 'abc123X',
+      createdAt: new Date('2026-03-18T13:10:00.000Z'),
+      updatedAt: new Date('2026-03-18T13:10:00.000Z'),
+    };
+    prismaService.link.findFirst.mockResolvedValue(prismaLink);
+
+    await expect(
+      prismaLinkRepository.findByIdAndUserId('link_123', 'user_123'),
+    ).resolves.toEqual(prismaLink);
+    expect(prismaService.link.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'link_123',
+        userId: 'user_123',
+      },
+    });
+  });
+
+  it('should return null when an owned link id is not found', async () => {
+    prismaService.link.findFirst.mockResolvedValue(null);
+
+    await expect(
+      prismaLinkRepository.findByIdAndUserId('missing', 'user_123'),
+    ).resolves.toBeNull();
+    expect(prismaService.link.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'missing',
+        userId: 'user_123',
       },
     });
   });
