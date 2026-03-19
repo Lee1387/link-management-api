@@ -1,0 +1,5 @@
+DELETE FROM "Link"
+WHERE "userId" IS NULL;
+
+ALTER TABLE "Link"
+ALTER COLUMN "userId" SET NOT NULL;

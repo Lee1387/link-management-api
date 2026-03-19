@@ -10,6 +10,7 @@ import {
 describe('Redirect (db e2e)', () => {
   const environmentSnapshot = captureTestEnvironment();
   const createdShortCodes = new Set<string>();
+  const createdEmails = new Set<string>();
   let app: NestFastifyApplication | null = null;
 
   beforeAll(() => {
@@ -30,11 +31,22 @@ describe('Redirect (db e2e)', () => {
         });
       }
 
+      if (createdEmails.size > 0) {
+        await prismaService.user.deleteMany({
+          where: {
+            email: {
+              in: [...createdEmails],
+            },
+          },
+        });
+      }
+
       await app.close();
       app = null;
     }
 
     createdShortCodes.clear();
+    createdEmails.clear();
   });
 
   afterAll(() => {
@@ -48,13 +60,23 @@ describe('Redirect (db e2e)', () => {
   it('GET /:shortCode should redirect through the real Prisma-backed lookup', async () => {
     app = await createApp();
     const prismaService = app.get(PrismaService);
+    const email = `redirect.${Date.now().toString(36)}@example.com`;
     const shortCode = `db${Date.now().toString(36)}x`;
+    createdEmails.add(email);
     createdShortCodes.add(shortCode);
+
+    const user = await prismaService.user.create({
+      data: {
+        email,
+        passwordHash: 'hashed-password',
+      },
+    });
 
     await prismaService.link.create({
       data: {
         originalUrl: 'https://example.com/articles/clean-architecture',
         shortCode,
+        userId: user.id,
       },
     });
 

@@ -4,16 +4,17 @@ import {
   AUTH_USER_REPOSITORY,
   type AuthUserRepository,
 } from '../../domain/auth-user.repository';
+import { InvalidCredentialsError } from '../../domain/auth-user.errors';
 import type { AuthUser } from '../../domain/auth-user.entity';
 import { normalizeEmail } from '../../domain/normalize-email';
 
-export interface RegisterUserCommand {
+export interface AuthenticateUserCommand {
   email: string;
   password: string;
 }
 
 @Injectable()
-export class RegisterUserUseCase {
+export class AuthenticateUserUseCase {
   constructor(
     @Inject(AUTH_USER_REPOSITORY)
     private readonly authUserRepository: AuthUserRepository,
@@ -21,12 +22,24 @@ export class RegisterUserUseCase {
     private readonly passwordHasher: PasswordHasher,
   ) {}
 
-  async execute(command: RegisterUserCommand): Promise<AuthUser> {
-    const passwordHash = await this.passwordHasher.hash(command.password);
+  async execute(command: AuthenticateUserCommand): Promise<AuthUser> {
+    const user = await this.authUserRepository.findByEmail(
+      normalizeEmail(command.email),
+    );
 
-    return this.authUserRepository.create({
-      email: normalizeEmail(command.email),
-      passwordHash,
-    });
+    if (user === null) {
+      throw new InvalidCredentialsError();
+    }
+
+    const passwordMatches = await this.passwordHasher.verify(
+      command.password,
+      user.passwordHash,
+    );
+
+    if (!passwordMatches) {
+      throw new InvalidCredentialsError();
+    }
+
+    return user;
   }
 }

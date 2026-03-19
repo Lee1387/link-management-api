@@ -4,6 +4,7 @@ import authConfig, { type AuthConfig } from '../config/auth.config';
 import { ACCESS_TOKEN_VERIFIER } from './application/ports/access-token-verifier';
 import { ACCESS_TOKEN_SIGNER } from './application/ports/access-token-signer';
 import { PrismaModule } from '../prisma/prisma.module';
+import { AuthenticateUserUseCase } from './application/use-cases/authenticate-user.use-case';
 import { LoginUserUseCase } from './application/use-cases/login-user.use-case';
 import { PASSWORD_HASHER } from './application/ports/password-hasher';
 import { RegisterUserUseCase } from './application/use-cases/register-user.use-case';
@@ -33,6 +34,7 @@ import { JwtAuthGuard } from './http/jwt-auth.guard';
   ],
   providers: [
     RegisterUserUseCase,
+    AuthenticateUserUseCase,
     LoginUserUseCase,
     PrismaUserRepository,
     ScryptPasswordHasher,
@@ -56,11 +58,6 @@ import { JwtAuthGuard } from './http/jwt-auth.guard';
       useExisting: JwtAccessTokenVerifier,
     },
   ],
-  exports: [
-    RegisterUserUseCase,
-    LoginUserUseCase,
-    ACCESS_TOKEN_VERIFIER,
-    JwtAuthGuard,
-  ],
+  exports: [ACCESS_TOKEN_VERIFIER, JwtAuthGuard],
 })
 export class AuthModule {}

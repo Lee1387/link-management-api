@@ -31,6 +31,5 @@ import { LinksController } from './links.controller';
       useExisting: RandomShortCodeGenerator,
     },
   ],
-  exports: [CreateLinkUseCase],
 })
 export class LinksModule {}

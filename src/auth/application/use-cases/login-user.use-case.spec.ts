@@ -3,33 +3,29 @@ import {
   ACCESS_TOKEN_SIGNER,
   type AccessTokenSigner,
 } from '../ports/access-token-signer';
+import { AuthenticateUserUseCase } from './authenticate-user.use-case';
 import { LoginUserUseCase } from './login-user.use-case';
-import { PASSWORD_HASHER, type PasswordHasher } from '../ports/password-hasher';
-import {
-  AUTH_USER_REPOSITORY,
-  type AuthUserRepository,
-} from '../../domain/auth-user.repository';
 import type { AuthUser } from '../../domain/auth-user.entity';
 import { InvalidCredentialsError } from '../../domain/auth-user.errors';
 
 describe('LoginUserUseCase', () => {
   let loginUserUseCase: LoginUserUseCase;
-  let authUserRepository: {
-    findByEmail: jest.Mock<Promise<AuthUser | null>, [string]>;
-  };
-  let passwordHasher: {
-    verify: jest.Mock<Promise<boolean>, [string, string]>;
+  let authenticateUserUseCase: {
+    execute: jest.Mock<
+      Promise<AuthUser>,
+      [{ email: string; password: string }]
+    >;
   };
   let accessTokenSigner: {
     sign: jest.Mock<Promise<string>, [{ sub: string; email: string }]>;
   };
 
   beforeEach(async () => {
-    authUserRepository = {
-      findByEmail: jest.fn<Promise<AuthUser | null>, [string]>(),
-    };
-    passwordHasher = {
-      verify: jest.fn<Promise<boolean>, [string, string]>(),
+    authenticateUserUseCase = {
+      execute: jest.fn<
+        Promise<AuthUser>,
+        [{ email: string; password: string }]
+      >(),
     };
     accessTokenSigner = {
       sign: jest.fn<Promise<string>, [{ sub: string; email: string }]>(),
@@ -39,15 +35,11 @@ describe('LoginUserUseCase', () => {
       providers: [
         LoginUserUseCase,
         {
-          provide: AUTH_USER_REPOSITORY,
-          useValue: authUserRepository satisfies Pick<
-            AuthUserRepository,
-            'findByEmail'
+          provide: AuthenticateUserUseCase,
+          useValue: authenticateUserUseCase satisfies Pick<
+            AuthenticateUserUseCase,
+            'execute'
           >,
-        },
-        {
-          provide: PASSWORD_HASHER,
-          useValue: passwordHasher satisfies Pick<PasswordHasher, 'verify'>,
         },
         {
           provide: ACCESS_TOKEN_SIGNER,
@@ -59,7 +51,7 @@ describe('LoginUserUseCase', () => {
     loginUserUseCase = module.get<LoginUserUseCase>(LoginUserUseCase);
   });
 
-  it('should normalize the email, verify the password, and return a clean result', async () => {
+  it('should authenticate the user, sign an access token, and return a clean result', async () => {
     const user: AuthUser = {
       id: 'user_123',
       email: 'alex@example.com',
@@ -67,8 +59,7 @@ describe('LoginUserUseCase', () => {
       createdAt: new Date('2026-03-19T10:00:00.000Z'),
       updatedAt: new Date('2026-03-19T10:00:00.000Z'),
     };
-    authUserRepository.findByEmail.mockResolvedValue(user);
-    passwordHasher.verify.mockResolvedValue(true);
+    authenticateUserUseCase.execute.mockResolvedValue(user);
     accessTokenSigner.sign.mockResolvedValue('signed-jwt-token');
 
     await expect(
@@ -84,46 +75,25 @@ describe('LoginUserUseCase', () => {
         email: user.email,
       },
     });
-    expect(authUserRepository.findByEmail).toHaveBeenCalledWith(
-      'alex@example.com',
-    );
-    expect(passwordHasher.verify).toHaveBeenCalledWith(
-      'my-secure-password',
-      user.passwordHash,
-    );
+    expect(authenticateUserUseCase.execute).toHaveBeenCalledWith({
+      email: '  Alex@Example.com ',
+      password: 'my-secure-password',
+    });
     expect(accessTokenSigner.sign).toHaveBeenCalledWith({
       sub: user.id,
       email: user.email,
     });
   });
 
-  it('should reject when the email does not exist', async () => {
-    authUserRepository.findByEmail.mockResolvedValue(null);
+  it('should reject when authentication fails', async () => {
+    authenticateUserUseCase.execute.mockRejectedValue(
+      new InvalidCredentialsError(),
+    );
 
     await expect(
       loginUserUseCase.execute({
         email: 'alex@example.com',
         password: 'my-secure-password',
-      }),
-    ).rejects.toThrow(InvalidCredentialsError);
-    expect(passwordHasher.verify).not.toHaveBeenCalled();
-    expect(accessTokenSigner.sign).not.toHaveBeenCalled();
-  });
-
-  it('should reject when the password is invalid', async () => {
-    authUserRepository.findByEmail.mockResolvedValue({
-      id: 'user_123',
-      email: 'alex@example.com',
-      passwordHash: 'hashed-password',
-      createdAt: new Date('2026-03-19T10:00:00.000Z'),
-      updatedAt: new Date('2026-03-19T10:00:00.000Z'),
-    });
-    passwordHasher.verify.mockResolvedValue(false);
-
-    await expect(
-      loginUserUseCase.execute({
-        email: 'alex@example.com',
-        password: 'wrong-password',
       }),
     ).rejects.toThrow(InvalidCredentialsError);
     expect(accessTokenSigner.sign).not.toHaveBeenCalled();
