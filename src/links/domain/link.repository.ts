@@ -3,6 +3,7 @@ import type { Link } from './link.entity';
 export interface CreateLinkInput {
   originalUrl: string;
   shortCode: string;
+  userId: string;
 }
 
 export interface LinkRepository {

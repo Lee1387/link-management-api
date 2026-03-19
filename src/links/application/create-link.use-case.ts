@@ -15,6 +15,7 @@ import type { Link } from '../domain/link.entity';
 
 export interface CreateLinkCommand {
   originalUrl: string;
+  userId: string;
 }
 
 const MAX_SHORT_CODE_GENERATION_ATTEMPTS = 5;
@@ -40,6 +41,7 @@ export class CreateLinkUseCase {
         return await this.linkRepository.create({
           originalUrl: command.originalUrl,
           shortCode,
+          userId: command.userId,
         });
       } catch (error) {
         if (error instanceof DuplicateShortCodeError) {

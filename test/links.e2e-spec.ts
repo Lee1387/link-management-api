@@ -33,7 +33,7 @@ describe('Links (e2e)', () => {
         createdAt: Date;
         updatedAt: Date;
       }>,
-      [{ originalUrl: string }]
+      [{ originalUrl: string; userId: string }]
     >;
   };
   let accessTokenVerifier: {
@@ -65,7 +65,7 @@ describe('Links (e2e)', () => {
           createdAt: Date;
           updatedAt: Date;
         }>,
-        [{ originalUrl: string }]
+        [{ originalUrl: string; userId: string }]
       >(),
     };
     accessTokenVerifier = {
@@ -129,6 +129,7 @@ describe('Links (e2e)', () => {
     });
     expect(createLinkUseCase.execute).toHaveBeenCalledWith({
       originalUrl: 'https://example.com/articles/clean-architecture',
+      userId: 'user_123',
     });
     expect(accessTokenVerifier.verify).toHaveBeenCalledWith('signed-jwt-token');
   });

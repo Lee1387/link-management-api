@@ -48,6 +48,7 @@ describe('CreateLinkUseCase', () => {
   it('should generate a short code and delegate link creation to the repository', async () => {
     const command = {
       originalUrl: 'https://example.com/articles/clean-architecture',
+      userId: 'user_123',
     };
     const shortCode = 'abc123x';
     const createdLink: Link = {
@@ -67,6 +68,7 @@ describe('CreateLinkUseCase', () => {
     expect(linkRepository.create).toHaveBeenCalledWith({
       originalUrl: command.originalUrl,
       shortCode,
+      userId: command.userId,
     });
     expect(linkRepository.create).toHaveBeenCalledTimes(1);
   });
@@ -74,6 +76,7 @@ describe('CreateLinkUseCase', () => {
   it('should retry link creation when a generated short code collides', async () => {
     const command = {
       originalUrl: 'https://example.com/articles/clean-architecture',
+      userId: 'user_123',
     };
     const createdLink: Link = {
       id: 'link_123',
@@ -96,10 +99,12 @@ describe('CreateLinkUseCase', () => {
     expect(linkRepository.create).toHaveBeenNthCalledWith(1, {
       originalUrl: command.originalUrl,
       shortCode: 'taken123',
+      userId: command.userId,
     });
     expect(linkRepository.create).toHaveBeenNthCalledWith(2, {
       originalUrl: command.originalUrl,
       shortCode: createdLink.shortCode,
+      userId: command.userId,
     });
   });
 
@@ -110,6 +115,7 @@ describe('CreateLinkUseCase', () => {
     await expect(
       createLinkUseCase.execute({
         originalUrl: 'https://example.com/articles/clean-architecture',
+        userId: 'user_123',
       }),
     ).rejects.toThrow(ShortCodeGenerationFailedError);
     expect(shortCodeGenerator.generate).toHaveBeenCalledTimes(5);

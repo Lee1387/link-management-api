@@ -6,7 +6,9 @@ import {
   ApiTags,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/http/current-user.decorator';
 import { JwtAuthGuard } from '../auth/http/jwt-auth.guard';
+import type { AuthenticatedRequestUser } from '../auth/http/authenticated-request-user';
 import { CreateLinkUseCase } from './application/create-link.use-case';
 import { CreateLinkDto } from './dto/create-link.dto';
 import { LinkResponseDto, toLinkResponseDto } from './dto/link-response.dto';
@@ -33,9 +35,13 @@ export class LinksController {
     description: 'A valid bearer token is required to create a short link.',
   })
   @UseGuards(JwtAuthGuard)
-  async create(@Body() body: CreateLinkDto): Promise<LinkResponseDto> {
+  async create(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Body() body: CreateLinkDto,
+  ): Promise<LinkResponseDto> {
     const link = await this.createLinkUseCase.execute({
       originalUrl: body.originalUrl,
+      userId: user.id,
     });
 
     return toLinkResponseDto(link);

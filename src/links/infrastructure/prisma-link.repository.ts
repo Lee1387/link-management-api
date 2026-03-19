@@ -39,6 +39,7 @@ export class PrismaLinkRepository implements LinkRepository {
         data: {
           originalUrl: input.originalUrl,
           shortCode: input.shortCode,
+          userId: input.userId,
         },
       });
 

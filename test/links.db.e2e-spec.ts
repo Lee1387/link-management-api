@@ -81,6 +81,9 @@ describe('Links (db e2e)', () => {
     });
     const loginBody: {
       accessToken: unknown;
+      user: {
+        id: unknown;
+      };
     } = loginResponse.json();
 
     const response = await app.inject({
@@ -125,6 +128,7 @@ describe('Links (db e2e)', () => {
     expect(link).toMatchObject({
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: body.shortCode,
+      userId: loginBody.user.id,
     });
   });
 });

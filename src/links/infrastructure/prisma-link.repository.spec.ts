@@ -75,6 +75,7 @@ describe('PrismaLinkRepository', () => {
     const input: CreateLinkInput = {
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123',
+      userId: 'user_123',
     };
     const prismaLink = {
       id: 'link_123',
@@ -98,6 +99,7 @@ describe('PrismaLinkRepository', () => {
     const input: CreateLinkInput = {
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123',
+      userId: 'user_123',
     };
     prismaService.link.create.mockRejectedValue({
       code: 'P2002',
