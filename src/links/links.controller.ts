@@ -8,6 +8,7 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { SkipThrottle, Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import {
   ApiBadRequestResponse,
   ApiCreatedResponse,
@@ -35,6 +36,10 @@ import {
   OwnedLinkResponseDto,
   toOwnedLinkResponseDtos,
 } from './dto/owned-link-response.dto';
+import {
+  SKIP_AUTH_RATE_LIMIT,
+  WRITE_RATE_LIMIT,
+} from '../rate-limit/rate-limit.policies';
 
 @ApiTags('links')
 @Controller('links')
@@ -124,7 +129,9 @@ export class LinksController {
   @ApiUnauthorizedResponse({
     description: 'A valid bearer token is required to disable an owned link.',
   })
-  @UseGuards(JwtAuthGuard)
+  @SkipThrottle(SKIP_AUTH_RATE_LIMIT)
+  @Throttle(WRITE_RATE_LIMIT)
+  @UseGuards(ThrottlerGuard, JwtAuthGuard)
   async disableOwned(
     @CurrentUser() user: AuthenticatedRequestUser,
     @Param('id') id: string,
@@ -154,7 +161,9 @@ export class LinksController {
   @ApiUnauthorizedResponse({
     description: 'A valid bearer token is required to create a short link.',
   })
-  @UseGuards(JwtAuthGuard)
+  @SkipThrottle(SKIP_AUTH_RATE_LIMIT)
+  @Throttle(WRITE_RATE_LIMIT)
+  @UseGuards(ThrottlerGuard, JwtAuthGuard)
   async create(
     @CurrentUser() user: AuthenticatedRequestUser,
     @Body() body: CreateLinkDto,

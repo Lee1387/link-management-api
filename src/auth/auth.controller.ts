@@ -6,7 +6,9 @@ import {
   HttpStatus,
   Post,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
+import { SkipThrottle, Throttle, ThrottlerGuard } from '@nestjs/throttler';
 import {
   ApiBadRequestResponse,
   ApiConflictResponse,
@@ -32,6 +34,10 @@ import {
   RegisteredUserResponseDto,
   toRegisteredUserResponseDto,
 } from './dto/registered-user-response.dto';
+import {
+  AUTH_RATE_LIMIT,
+  SKIP_WRITE_RATE_LIMIT,
+} from '../rate-limit/rate-limit.policies';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -56,6 +62,9 @@ export class AuthController {
   @ApiConflictResponse({
     description: 'A user account with that email already exists.',
   })
+  @SkipThrottle(SKIP_WRITE_RATE_LIMIT)
+  @Throttle(AUTH_RATE_LIMIT)
+  @UseGuards(ThrottlerGuard)
   async register(
     @Body() body: RegisterUserDto,
   ): Promise<RegisteredUserResponseDto> {
@@ -92,6 +101,9 @@ export class AuthController {
     description: 'The provided email or password is invalid.',
   })
   @HttpCode(HttpStatus.OK)
+  @SkipThrottle(SKIP_WRITE_RATE_LIMIT)
+  @Throttle(AUTH_RATE_LIMIT)
+  @UseGuards(ThrottlerGuard)
   async login(@Body() body: LoginUserDto): Promise<LoggedInUserResponseDto> {
     try {
       const user = await this.loginUserUseCase.execute({

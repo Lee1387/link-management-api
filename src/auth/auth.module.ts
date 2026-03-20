@@ -1,6 +1,7 @@
 import { JwtModule, type JwtSignOptions } from '@nestjs/jwt';
 import { Module } from '@nestjs/common';
 import authConfig, { type AuthConfig } from '../config/auth.config';
+import { RateLimitModule } from '../rate-limit/rate-limit.module';
 import { ACCESS_TOKEN_VERIFIER } from './application/ports/access-token-verifier';
 import { ACCESS_TOKEN_SIGNER } from './application/ports/access-token-signer';
 import { PrismaModule } from '../prisma/prisma.module';
@@ -20,6 +21,7 @@ import { JwtAuthGuard } from './http/jwt-auth.guard';
   controllers: [AuthController],
   imports: [
     PrismaModule,
+    RateLimitModule,
     JwtModule.registerAsync({
       inject: [authConfig.KEY],
       useFactory: (config: AuthConfig) => ({
