@@ -7,7 +7,9 @@ const appConfig = registerAs('app', () => {
   return {
     databaseUrl: env.DATABASE_URL,
     nodeEnv: env.NODE_ENV,
+    openApiEnabled: env.OPENAPI_ENABLED,
     port: env.PORT,
+    readinessEnabled: env.READINESS_ENABLED,
   };
 });
 

@@ -1,4 +1,8 @@
-import { createAppLogger, configureApp } from './app.bootstrap';
+import {
+  createAppLogger,
+  configureApp,
+  setupOptionalOpenApi,
+} from './app.bootstrap';
 import { type AppConfig } from './config/app.config';
 import appConfig from './config/app.config';
 import {
@@ -7,7 +11,6 @@ import {
 } from '@nestjs/platform-fastify';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { setupOpenApi } from './app.openapi';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -17,11 +20,11 @@ async function bootstrap() {
       bufferLogs: true,
     },
   );
-  const { nodeEnv, port } = app.get<AppConfig>(appConfig.KEY);
+  const { nodeEnv, openApiEnabled, port } = app.get<AppConfig>(appConfig.KEY);
 
   app.useLogger(createAppLogger(nodeEnv));
   await configureApp(app, nodeEnv);
-  setupOpenApi(app);
+  setupOptionalOpenApi(app, openApiEnabled);
 
   await app.listen(port, '0.0.0.0');
 }

@@ -1,4 +1,5 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
+import appConfig, { type AppConfig } from './../../src/config/app.config';
 import { PrismaService } from './../../src/prisma/prisma.service';
 import { createTestApp } from './../support/create-test-app';
 import {
@@ -35,10 +36,22 @@ describe('Health (e2e)', () => {
 
   async function createApp(
     prismaService: PrismaQueryExecutor,
+    configOverrides: Partial<AppConfig> = {},
   ): Promise<NestFastifyApplication> {
     return createTestApp({
       configureBuilder: (builder) =>
-        builder.overrideProvider(PrismaService).useValue(prismaService),
+        builder
+          .overrideProvider(PrismaService)
+          .useValue(prismaService)
+          .overrideProvider(appConfig.KEY)
+          .useValue({
+            databaseUrl: process.env.DATABASE_URL as string,
+            nodeEnv: 'test',
+            openApiEnabled: true,
+            port: 3000,
+            readinessEnabled: true,
+            ...configOverrides,
+          } satisfies AppConfig),
     });
   }
 
@@ -111,5 +124,29 @@ describe('Health (e2e)', () => {
         database: 'down',
       },
     });
+  });
+
+  it('/health/ready (GET) should return not found when readiness exposure is disabled', async () => {
+    const prismaService = {
+      $queryRaw: jest.fn<
+        Promise<unknown>,
+        [TemplateStringsArray, ...unknown[]]
+      >(),
+    };
+    app = await createApp(prismaService, {
+      readinessEnabled: false,
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/health/ready',
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      message: 'Not Found',
+      statusCode: 404,
+    });
+    expect(prismaService.$queryRaw).not.toHaveBeenCalled();
   });
 });

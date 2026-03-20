@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Inject, NotFoundException } from '@nestjs/common';
 import {
   ApiOkResponse,
   ApiOperation,
@@ -15,11 +15,16 @@ import {
   ReadinessErrorResponseDto,
   ReadinessResponseDto as ReadinessResponseModel,
 } from './health.response';
+import appConfig, { type AppConfig } from '../config/app.config';
 
 @ApiTags('health')
 @Controller('health')
 export class HealthController {
-  constructor(private readonly healthService: HealthService) {}
+  constructor(
+    private readonly healthService: HealthService,
+    @Inject(appConfig.KEY)
+    private readonly config: AppConfig,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Application liveness check' })
@@ -33,6 +38,10 @@ export class HealthController {
   @ApiOkResponse({ type: ReadinessResponseModel })
   @ApiServiceUnavailableResponse({ type: ReadinessErrorResponseDto })
   getReadiness(): Promise<ReadinessResponseDto> {
+    if (!this.config.readinessEnabled) {
+      throw new NotFoundException();
+    }
+
     return this.healthService.getReadiness();
   }
 }

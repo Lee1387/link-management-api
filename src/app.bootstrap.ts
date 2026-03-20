@@ -2,6 +2,7 @@ import { ConsoleLogger, type LogLevel, ValidationPipe } from '@nestjs/common';
 import helmet from '@fastify/helmet';
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { type EnvironmentVariables } from './config/env.schema';
+import { setupOpenApi } from './app.openapi';
 
 export type RuntimeNodeEnv = EnvironmentVariables['NODE_ENV'];
 
@@ -43,6 +44,18 @@ export function createValidationPipe(nodeEnv: RuntimeNodeEnv): ValidationPipe {
     transform: true,
     disableErrorMessages: nodeEnv === 'production',
   });
+}
+
+export function setupOptionalOpenApi(
+  app: NestFastifyApplication,
+  openApiEnabled: boolean,
+  setup: (app: NestFastifyApplication) => void = setupOpenApi,
+): void {
+  if (!openApiEnabled) {
+    return;
+  }
+
+  setup(app);
 }
 
 export async function configureApp(

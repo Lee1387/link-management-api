@@ -1,4 +1,6 @@
+import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
+import appConfig from '../config/app.config';
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
 import { LivenessResponseDto, ReadinessResponseDto } from './health.response';
@@ -16,15 +18,23 @@ describe('HealthController', () => {
       getReadiness: jest.fn<Promise<ReadinessResponseDto>, []>(),
     };
 
-    const module: TestingModule = await Test.createTestingModule({
+    const moduleBuilder = Test.createTestingModule({
       controllers: [HealthController],
       providers: [
         {
           provide: HealthService,
           useValue: healthService,
         },
+        {
+          provide: appConfig.KEY,
+          useValue: {
+            readinessEnabled: true,
+          },
+        },
       ],
-    }).compile();
+    });
+
+    const module: TestingModule = await moduleBuilder.compile();
 
     healthController = module.get<HealthController>(HealthController);
   });
@@ -53,5 +63,34 @@ describe('HealthController', () => {
 
     await expect(healthController.getReadiness()).resolves.toEqual(response);
     expect(healthService.getReadiness).toHaveBeenCalledTimes(1);
+  });
+
+  it('should return not found when readiness exposure is disabled', async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [HealthController],
+      providers: [
+        {
+          provide: HealthService,
+          useValue: healthService,
+        },
+        {
+          provide: appConfig.KEY,
+          useValue: {
+            readinessEnabled: false,
+          },
+        },
+      ],
+    }).compile();
+
+    healthController = module.get<HealthController>(HealthController);
+
+    try {
+      void healthController.getReadiness();
+      throw new Error('Expected readiness check to throw when disabled.');
+    } catch (error) {
+      expect(error).toBeInstanceOf(NotFoundException);
+      expect((error as NotFoundException).getStatus()).toBe(404);
+    }
+    expect(healthService.getReadiness).not.toHaveBeenCalled();
   });
 });

@@ -2,6 +2,7 @@ import {
   createAppLogger,
   createValidationPipe,
   resolveNodeEnv,
+  setupOptionalOpenApi,
 } from './app.bootstrap';
 
 describe('app bootstrap runtime configuration', () => {
@@ -56,5 +57,23 @@ describe('app bootstrap runtime configuration', () => {
       colors: true,
       timestamp: true,
     });
+  });
+
+  it('should enable OpenAPI setup when the config allows it', () => {
+    const app = {} as Parameters<typeof setupOptionalOpenApi>[0];
+    const setupOpenApi = jest.fn<void, [typeof app]>();
+
+    setupOptionalOpenApi(app, true, setupOpenApi);
+
+    expect(setupOpenApi).toHaveBeenCalledWith(app);
+  });
+
+  it('should skip OpenAPI setup when the config disables it', () => {
+    const app = {} as Parameters<typeof setupOptionalOpenApi>[0];
+    const setupOpenApi = jest.fn<void, [typeof app]>();
+
+    setupOptionalOpenApi(app, false, setupOpenApi);
+
+    expect(setupOpenApi).not.toHaveBeenCalled();
   });
 });
