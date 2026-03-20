@@ -11,7 +11,7 @@ BranchlyAPI exists to support a focused Branchly product experience:
 - users can register and log in
 - users can create and manage their own short links
 - public visitors can resolve active short codes
-- link lifecycle controls like disablement are enforced at the API level
+- link lifecycle controls like disablement and re-enablement are enforced at the API level
 
 It is intentionally opinionated:
 
@@ -30,6 +30,7 @@ It is intentionally opinionated:
 | `GET` | `/links` | Yes | List owned links |
 | `GET` | `/links/:id` | Yes | Get owned link details |
 | `PATCH` | `/links/:id/disable` | Yes | Disable an owned link |
+| `PATCH` | `/links/:id/enable` | Yes | Re-enable an owned link |
 | `GET` | `/:shortCode` | No | Resolve a short code publicly |
 | `GET` | `/health` | No | Liveness check |
 
@@ -44,7 +45,7 @@ Additional notes:
 BranchlyAPI uses a modular NestJS structure with clear boundaries between HTTP transport, application logic, and infrastructure:
 
 - `src/auth` handles registration, login, JWT issuance, JWT verification, and request authentication
-- `src/links` contains link creation, ownership-aware management flows, and public redirect resolution
+- `src/links` contains link creation, ownership-aware management flows, link lifecycle controls, and public redirect resolution
 - `src/health` provides liveness and non-production readiness checks
 - `src/config` owns environment validation and runtime configuration
 - `src/prisma` contains database integration and Prisma service wiring
@@ -113,6 +114,13 @@ Disable a link:
 
 ```bash
 curl -X PATCH http://localhost:3000/links/<linkId>/disable \
+  -H "Authorization: Bearer <token>"
+```
+
+Re-enable a link:
+
+```bash
+curl -X PATCH http://localhost:3000/links/<linkId>/enable \
   -H "Authorization: Bearer <token>"
 ```
 
@@ -201,6 +209,7 @@ JWT_EXPIRES_IN=15m
 - Protected management routes require `Authorization: Bearer <token>`
 - Public redirects remain unauthenticated
 - Disabled links return `404` instead of redirecting
+- Re-enabled links resolve publicly again
 - Rate limiting is applied to auth and protected write routes
 - CORS is configured for the Branchly frontend origin, not arbitrary public origins
 
