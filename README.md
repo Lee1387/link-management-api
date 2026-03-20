@@ -136,4 +136,4 @@ The current backend supports the core flow:
 
 ## License
 
-This project is currently marked `UNLICENSED`.
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
