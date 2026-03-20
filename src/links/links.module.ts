@@ -4,6 +4,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { RateLimitModule } from '../rate-limit/rate-limit.module';
 import { CreateLinkUseCase } from './application/use-cases/create-link.use-case';
 import { DisableOwnedLinkUseCase } from './application/use-cases/disable-owned-link.use-case';
+import { EnableOwnedLinkUseCase } from './application/use-cases/enable-owned-link.use-case';
 import { GetOwnedLinkDetailsUseCase } from './application/use-cases/get-owned-link-details.use-case';
 import { ListOwnedLinksUseCase } from './application/use-cases/list-owned-links.use-case';
 import { ResolveLinkUseCase } from './application/use-cases/resolve-link.use-case';
@@ -20,6 +21,7 @@ import { LinksController } from './links.controller';
   providers: [
     CreateLinkUseCase,
     DisableOwnedLinkUseCase,
+    EnableOwnedLinkUseCase,
     GetOwnedLinkDetailsUseCase,
     ListOwnedLinksUseCase,
     ResolveLinkUseCase,
