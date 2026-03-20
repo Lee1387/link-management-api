@@ -3,68 +3,36 @@ import { validateEnv } from './env.schema';
 describe('env schema', () => {
   const baseConfig = {
     DATABASE_URL:
-      'postgresql://postgres:postgres@localhost:5432/link_management_api?schema=public',
+      'postgresql://postgres:postgres@localhost:5432/branchly_api?schema=public',
     JWT_SECRET: 'test-jwt-secret-that-is-long-enough-for-validation',
     JWT_EXPIRES_IN: '15m',
     NODE_ENV: 'development',
     PORT: '3000',
   } satisfies Record<string, unknown>;
 
-  it('should default OpenAPI and readiness exposure flags to enabled', () => {
+  it('should allow the frontend origin to be omitted', () => {
     const env = validateEnv(baseConfig);
 
-    expect(env.CORS_ENABLED).toBe(false);
-    expect(env.CORS_ALLOWED_ORIGINS).toEqual([]);
-    expect(env.OPENAPI_ENABLED).toBe(true);
-    expect(env.READINESS_ENABLED).toBe(true);
+    expect(env.FRONTEND_ORIGIN).toBeUndefined();
   });
 
-  it('should parse explicit false exposure flags from environment strings', () => {
+  it('should normalize the configured frontend origin', () => {
     const env = validateEnv({
       ...baseConfig,
-      OPENAPI_ENABLED: 'false',
-      READINESS_ENABLED: '0',
+      FRONTEND_ORIGIN: 'https://app.example.com/',
     });
 
-    expect(env.OPENAPI_ENABLED).toBe(false);
-    expect(env.READINESS_ENABLED).toBe(false);
+    expect(env.FRONTEND_ORIGIN).toBe('https://app.example.com');
   });
 
-  it('should normalize a comma-separated CORS origin allowlist', () => {
-    const env = validateEnv({
-      ...baseConfig,
-      CORS_ENABLED: 'true',
-      CORS_ALLOWED_ORIGINS:
-        'https://app.example.com, https://admin.example.com/',
-    });
-
-    expect(env.CORS_ENABLED).toBe(true);
-    expect(env.CORS_ALLOWED_ORIGINS).toEqual([
-      'https://app.example.com',
-      'https://admin.example.com',
-    ]);
-  });
-
-  it('should reject enabled CORS without an explicit allowlist', () => {
+  it('should reject frontend origins that include paths', () => {
     expect(() =>
       validateEnv({
         ...baseConfig,
-        CORS_ENABLED: 'true',
+        FRONTEND_ORIGIN: 'https://app.example.com/dashboard',
       }),
     ).toThrow(
-      'CORS_ALLOWED_ORIGINS must contain at least one allowed origin when CORS is enabled.',
-    );
-  });
-
-  it('should reject CORS origins that include paths', () => {
-    expect(() =>
-      validateEnv({
-        ...baseConfig,
-        CORS_ENABLED: 'true',
-        CORS_ALLOWED_ORIGINS: 'https://app.example.com/dashboard',
-      }),
-    ).toThrow(
-      'CORS origins must be exact origins without a path, query, or fragment.',
+      'FRONTEND_ORIGIN must be an exact origin without a path, query, or fragment.',
     );
   });
 });

@@ -5,13 +5,10 @@ const appConfig = registerAs('app', () => {
   const env = validateEnv(process.env);
 
   return {
-    corsAllowedOrigins: env.CORS_ALLOWED_ORIGINS,
-    corsEnabled: env.CORS_ENABLED,
     databaseUrl: env.DATABASE_URL,
+    frontendOrigin: env.FRONTEND_ORIGIN,
     nodeEnv: env.NODE_ENV,
-    openApiEnabled: env.OPENAPI_ENABLED,
     port: env.PORT,
-    readinessEnabled: env.READINESS_ENABLED,
   };
 });
 

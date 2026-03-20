@@ -65,7 +65,7 @@ describe('app bootstrap runtime configuration', () => {
     const app = {} as Parameters<typeof setupOptionalOpenApi>[0];
     const setupOpenApi = jest.fn<void, [typeof app]>();
 
-    setupOptionalOpenApi(app, true, setupOpenApi);
+    setupOptionalOpenApi(app, 'development', setupOpenApi);
 
     expect(setupOpenApi).toHaveBeenCalledWith(app);
   });
@@ -74,7 +74,7 @@ describe('app bootstrap runtime configuration', () => {
     const app = {} as Parameters<typeof setupOptionalOpenApi>[0];
     const setupOpenApi = jest.fn<void, [typeof app]>();
 
-    setupOptionalOpenApi(app, false, setupOpenApi);
+    setupOptionalOpenApi(app, 'production', setupOpenApi);
 
     expect(setupOpenApi).not.toHaveBeenCalled();
   });
@@ -85,7 +85,7 @@ describe('app bootstrap runtime configuration', () => {
       enableCors,
     } as unknown as Parameters<typeof setupOptionalCors>[0];
 
-    setupOptionalCors(app, true, ['https://app.example.com']);
+    setupOptionalCors(app, 'https://app.example.com');
 
     expect(enableCors).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -101,17 +101,30 @@ describe('app bootstrap runtime configuration', () => {
       enableCors,
     } as unknown as Parameters<typeof setupOptionalCors>[0];
 
-    setupOptionalCors(app, false, ['https://app.example.com']);
+    setupOptionalCors(app, undefined);
 
     expect(enableCors).not.toHaveBeenCalled();
   });
 
   it('should allow configured CORS origins and reject others', () => {
-    const corsOptions = createCorsOptions(['https://app.example.com']);
+    const corsOptions = createCorsOptions('https://app.example.com');
 
-    const allowedOriginCallback = jest.fn<void, [Error | null, boolean?]>();
-    const disallowedOriginCallback = jest.fn<void, [Error | null, boolean?]>();
-    const missingOriginCallback = jest.fn<void, [Error | null, boolean?]>();
+    let allowedOriginResult: [Error | null, unknown?] | undefined;
+    let disallowedOriginResult: [Error | null, unknown?] | undefined;
+    let missingOriginResult: [Error | null, unknown?] | undefined;
+
+    const allowedOriginCallback = (error: Error | null, origin?: unknown) => {
+      allowedOriginResult = [error, origin];
+    };
+    const disallowedOriginCallback = (
+      error: Error | null,
+      origin?: unknown,
+    ) => {
+      disallowedOriginResult = [error, origin];
+    };
+    const missingOriginCallback = (error: Error | null, origin?: unknown) => {
+      missingOriginResult = [error, origin];
+    };
 
     if (typeof corsOptions.origin !== 'function') {
       throw new Error('Expected a dynamic CORS origin function.');
@@ -124,8 +137,8 @@ describe('app bootstrap runtime configuration', () => {
     );
     void corsOptions.origin(undefined, missingOriginCallback);
 
-    expect(allowedOriginCallback).toHaveBeenCalledWith(null, true);
-    expect(disallowedOriginCallback).toHaveBeenCalledWith(null, false);
-    expect(missingOriginCallback).toHaveBeenCalledWith(null, true);
+    expect(allowedOriginResult).toEqual([null, true]);
+    expect(disallowedOriginResult).toEqual([null, false]);
+    expect(missingOriginResult).toEqual([null, true]);
   });
 });

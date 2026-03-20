@@ -46,10 +46,9 @@ describe('Health (e2e)', () => {
           .overrideProvider(appConfig.KEY)
           .useValue({
             databaseUrl: process.env.DATABASE_URL as string,
+            frontendOrigin: undefined,
             nodeEnv: 'test',
-            openApiEnabled: true,
             port: 3000,
-            readinessEnabled: true,
             ...configOverrides,
           } satisfies AppConfig),
     });
@@ -134,7 +133,7 @@ describe('Health (e2e)', () => {
       >(),
     };
     app = await createApp(prismaService, {
-      readinessEnabled: false,
+      nodeEnv: 'production',
     });
 
     const response = await app.inject({

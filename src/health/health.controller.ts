@@ -38,7 +38,7 @@ export class HealthController {
   @ApiOkResponse({ type: ReadinessResponseModel })
   @ApiServiceUnavailableResponse({ type: ReadinessErrorResponseDto })
   getReadiness(): Promise<ReadinessResponseDto> {
-    if (!this.config.readinessEnabled) {
+    if (this.config.nodeEnv === 'production') {
       throw new NotFoundException();
     }
 

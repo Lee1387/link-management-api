@@ -1,5 +1,5 @@
 export const TEST_DATABASE_URL =
-  'postgresql://postgres:postgres@localhost:5432/link_management_api?schema=public';
+  'postgresql://postgres:postgres@localhost:5432/branchly_api?schema=public';
 export const TEST_JWT_EXPIRES_IN = '15m';
 export const TEST_JWT_SECRET =
   'test-jwt-secret-that-is-long-enough-for-validation';

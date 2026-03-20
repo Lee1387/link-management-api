@@ -85,7 +85,7 @@ describe('OpenAPI (e2e)', () => {
 
     expect(response.statusCode).toBe(200);
     expect(body.info).toMatchObject({
-      title: 'Link Management API',
+      title: 'BranchlyAPI',
       description:
         'Backend API for creating, managing, and tracking shortened links.',
       version: '0.0.1',

@@ -21,13 +21,12 @@ async function bootstrap() {
       bufferLogs: true,
     },
   );
-  const { corsAllowedOrigins, corsEnabled, nodeEnv, openApiEnabled, port } =
-    app.get<AppConfig>(appConfig.KEY);
+  const { frontendOrigin, nodeEnv, port } = app.get<AppConfig>(appConfig.KEY);
 
   app.useLogger(createAppLogger(nodeEnv));
   await configureApp(app, nodeEnv);
-  setupOptionalCors(app, corsEnabled, corsAllowedOrigins);
-  setupOptionalOpenApi(app, openApiEnabled);
+  setupOptionalCors(app, frontendOrigin);
+  setupOptionalOpenApi(app, nodeEnv);
 
   await app.listen(port, '0.0.0.0');
 }

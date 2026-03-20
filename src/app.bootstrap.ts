@@ -51,21 +51,17 @@ export function createValidationPipe(nodeEnv: RuntimeNodeEnv): ValidationPipe {
 
 export function setupOptionalOpenApi(
   app: NestFastifyApplication,
-  openApiEnabled: boolean,
+  nodeEnv: RuntimeNodeEnv,
   setup: (app: NestFastifyApplication) => void = setupOpenApi,
 ): void {
-  if (!openApiEnabled) {
+  if (nodeEnv === 'production') {
     return;
   }
 
   setup(app);
 }
 
-export function createCorsOptions(
-  allowedOrigins: readonly string[],
-): AppCorsOptions {
-  const allowedOriginSet = new Set(allowedOrigins);
-
+export function createCorsOptions(frontendOrigin: string): AppCorsOptions {
   return {
     origin(requestOrigin, callback) {
       if (requestOrigin === undefined) {
@@ -73,7 +69,7 @@ export function createCorsOptions(
         return;
       }
 
-      callback(null, allowedOriginSet.has(requestOrigin));
+      callback(null, requestOrigin === frontendOrigin);
     },
     methods: ['GET', 'HEAD', 'POST', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Authorization', 'Content-Type'],
@@ -85,14 +81,13 @@ export function createCorsOptions(
 
 export function setupOptionalCors(
   app: NestFastifyApplication,
-  corsEnabled: boolean,
-  corsAllowedOrigins: readonly string[],
+  frontendOrigin: string | undefined,
 ): void {
-  if (!corsEnabled) {
+  if (frontendOrigin === undefined) {
     return;
   }
 
-  app.enableCors(createCorsOptions(corsAllowedOrigins));
+  app.enableCors(createCorsOptions(frontendOrigin));
 }
 
 export async function configureApp(

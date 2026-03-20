@@ -52,7 +52,12 @@ describe('PrismaLinkRepository', () => {
             updatedAt: Date;
           }>
         >,
-        [{ where: { userId: string }; orderBy: { createdAt: 'desc' } }]
+        [
+          {
+            where: { userId: string };
+            orderBy: { createdAt: 'desc' };
+          },
+        ]
       >;
       update: jest.Mock<
         Promise<{
@@ -115,7 +120,12 @@ describe('PrismaLinkRepository', () => {
               updatedAt: Date;
             }>
           >,
-          [{ where: { userId: string }; orderBy: { createdAt: 'desc' } }]
+          [
+            {
+              where: { userId: string };
+              orderBy: { createdAt: 'desc' };
+            },
+          ]
         >(),
         update: jest.fn<
           Promise<{

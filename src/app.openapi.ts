@@ -3,7 +3,7 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 export function setupOpenApi(app: NestFastifyApplication): void {
   const config = new DocumentBuilder()
-    .setTitle('Link Management API')
+    .setTitle('BranchlyAPI')
     .setDescription(
       'Backend API for creating, managing, and tracking shortened links.',
     )
@@ -21,7 +21,6 @@ export function setupOpenApi(app: NestFastifyApplication): void {
 
   SwaggerModule.setup('docs', app, documentFactory, {
     jsonDocumentUrl: 'docs/json',
-    yamlDocumentUrl: 'docs/yaml',
-    customSiteTitle: 'Link Management API Docs',
+    customSiteTitle: 'BranchlyAPI Docs',
   });
 }

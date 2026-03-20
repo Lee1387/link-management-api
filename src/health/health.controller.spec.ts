@@ -28,7 +28,7 @@ describe('HealthController', () => {
         {
           provide: appConfig.KEY,
           useValue: {
-            readinessEnabled: true,
+            nodeEnv: 'test',
           },
         },
       ],
@@ -76,7 +76,7 @@ describe('HealthController', () => {
         {
           provide: appConfig.KEY,
           useValue: {
-            readinessEnabled: false,
+            nodeEnv: 'production',
           },
         },
       ],
