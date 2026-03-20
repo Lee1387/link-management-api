@@ -1,7 +1,9 @@
 import {
+  createCorsOptions,
   createAppLogger,
   createValidationPipe,
   resolveNodeEnv,
+  setupOptionalCors,
   setupOptionalOpenApi,
 } from './app.bootstrap';
 
@@ -75,5 +77,55 @@ describe('app bootstrap runtime configuration', () => {
     setupOptionalOpenApi(app, false, setupOpenApi);
 
     expect(setupOpenApi).not.toHaveBeenCalled();
+  });
+
+  it('should enable CORS setup when the config allows it', () => {
+    const enableCors = jest.fn<void, [ReturnType<typeof createCorsOptions>]>();
+    const app = {
+      enableCors,
+    } as unknown as Parameters<typeof setupOptionalCors>[0];
+
+    setupOptionalCors(app, true, ['https://app.example.com']);
+
+    expect(enableCors).toHaveBeenCalledWith(
+      expect.objectContaining({
+        credentials: false,
+        methods: ['GET', 'HEAD', 'POST', 'PATCH', 'OPTIONS'],
+      }),
+    );
+  });
+
+  it('should skip CORS setup when the config disables it', () => {
+    const enableCors = jest.fn();
+    const app = {
+      enableCors,
+    } as unknown as Parameters<typeof setupOptionalCors>[0];
+
+    setupOptionalCors(app, false, ['https://app.example.com']);
+
+    expect(enableCors).not.toHaveBeenCalled();
+  });
+
+  it('should allow configured CORS origins and reject others', () => {
+    const corsOptions = createCorsOptions(['https://app.example.com']);
+
+    const allowedOriginCallback = jest.fn<void, [Error | null, boolean?]>();
+    const disallowedOriginCallback = jest.fn<void, [Error | null, boolean?]>();
+    const missingOriginCallback = jest.fn<void, [Error | null, boolean?]>();
+
+    if (typeof corsOptions.origin !== 'function') {
+      throw new Error('Expected a dynamic CORS origin function.');
+    }
+
+    void corsOptions.origin('https://app.example.com', allowedOriginCallback);
+    void corsOptions.origin(
+      'https://evil.example.com',
+      disallowedOriginCallback,
+    );
+    void corsOptions.origin(undefined, missingOriginCallback);
+
+    expect(allowedOriginCallback).toHaveBeenCalledWith(null, true);
+    expect(disallowedOriginCallback).toHaveBeenCalledWith(null, false);
+    expect(missingOriginCallback).toHaveBeenCalledWith(null, true);
   });
 });

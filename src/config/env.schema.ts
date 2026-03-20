@@ -31,21 +31,87 @@ function parseBooleanEnv(value: unknown, defaultValue: boolean): unknown {
 const booleanEnvSchema = (defaultValue: boolean) =>
   z.preprocess((value) => parseBooleanEnv(value, defaultValue), z.boolean());
 
-export const envSchema = z.object({
-  DATABASE_URL: z.string().url(),
-  JWT_EXPIRES_IN: z.preprocess(
-    (value) => (value === undefined || value === '' ? '15m' : value),
-    z.string().trim().min(1),
+function parseCorsAllowedOrigins(value: unknown): unknown {
+  if (value === undefined || value === '') {
+    return [];
+  }
+
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (typeof value === 'string') {
+    return value
+      .split(',')
+      .map((origin) => origin.trim())
+      .filter((origin) => origin.length > 0);
+  }
+
+  return value;
+}
+
+const corsAllowedOriginsSchema = z.preprocess(
+  parseCorsAllowedOrigins,
+  z.array(z.string().trim().min(1)).transform((origins, context) =>
+    origins.map((origin) => {
+      try {
+        const normalizedOrigin = new URL(origin);
+
+        if (
+          normalizedOrigin.pathname !== '/' ||
+          normalizedOrigin.search !== '' ||
+          normalizedOrigin.hash !== ''
+        ) {
+          context.addIssue({
+            code: z.ZodIssueCode.custom,
+            message:
+              'CORS origins must be exact origins without a path, query, or fragment.',
+          });
+
+          return z.NEVER;
+        }
+
+        return normalizedOrigin.origin;
+      } catch {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: 'CORS origins must be valid absolute URLs.',
+        });
+
+        return z.NEVER;
+      }
+    }),
   ),
-  JWT_SECRET: z.string().min(32),
-  NODE_ENV: nodeEnvSchema.default('development'),
-  OPENAPI_ENABLED: booleanEnvSchema(true),
-  PORT: z.preprocess(
-    (value) => (value === undefined || value === '' ? 3000 : value),
-    z.coerce.number().int().min(1).max(65535),
-  ),
-  READINESS_ENABLED: booleanEnvSchema(true),
-});
+);
+
+export const envSchema = z
+  .object({
+    CORS_ALLOWED_ORIGINS: corsAllowedOriginsSchema,
+    CORS_ENABLED: booleanEnvSchema(false),
+    DATABASE_URL: z.string().url(),
+    JWT_EXPIRES_IN: z.preprocess(
+      (value) => (value === undefined || value === '' ? '15m' : value),
+      z.string().trim().min(1),
+    ),
+    JWT_SECRET: z.string().min(32),
+    NODE_ENV: nodeEnvSchema.default('development'),
+    OPENAPI_ENABLED: booleanEnvSchema(true),
+    PORT: z.preprocess(
+      (value) => (value === undefined || value === '' ? 3000 : value),
+      z.coerce.number().int().min(1).max(65535),
+    ),
+    READINESS_ENABLED: booleanEnvSchema(true),
+  })
+  .superRefine((env, context) => {
+    if (env.CORS_ENABLED && env.CORS_ALLOWED_ORIGINS.length === 0) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['CORS_ALLOWED_ORIGINS'],
+        message:
+          'CORS_ALLOWED_ORIGINS must contain at least one allowed origin when CORS is enabled.',
+      });
+    }
+  });
 
 export type EnvironmentVariables = z.infer<typeof envSchema>;
 

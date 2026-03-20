@@ -5,6 +5,9 @@ import { type EnvironmentVariables } from './config/env.schema';
 import { setupOpenApi } from './app.openapi';
 
 export type RuntimeNodeEnv = EnvironmentVariables['NODE_ENV'];
+type AppCorsOptions = NonNullable<
+  Parameters<NestFastifyApplication['enableCors']>[0]
+>;
 
 const DEVELOPMENT_LOG_LEVELS: LogLevel[] = [
   'log',
@@ -56,6 +59,40 @@ export function setupOptionalOpenApi(
   }
 
   setup(app);
+}
+
+export function createCorsOptions(
+  allowedOrigins: readonly string[],
+): AppCorsOptions {
+  const allowedOriginSet = new Set(allowedOrigins);
+
+  return {
+    origin(requestOrigin, callback) {
+      if (requestOrigin === undefined) {
+        callback(null, true);
+        return;
+      }
+
+      callback(null, allowedOriginSet.has(requestOrigin));
+    },
+    methods: ['GET', 'HEAD', 'POST', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Authorization', 'Content-Type'],
+    credentials: false,
+    maxAge: 86400,
+    optionsSuccessStatus: 204,
+  };
+}
+
+export function setupOptionalCors(
+  app: NestFastifyApplication,
+  corsEnabled: boolean,
+  corsAllowedOrigins: readonly string[],
+): void {
+  if (!corsEnabled) {
+    return;
+  }
+
+  app.enableCors(createCorsOptions(corsAllowedOrigins));
 }
 
 export async function configureApp(
