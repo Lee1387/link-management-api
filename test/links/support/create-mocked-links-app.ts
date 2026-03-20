@@ -61,7 +61,10 @@ export interface MockedLinksApp {
     execute: jest.Mock<Promise<MockLinkResult | null>, [string, string]>;
   };
   readonly listOwnedLinksUseCase: {
-    execute: jest.Mock<Promise<MockLinkResult[]>, [string]>;
+    execute: jest.Mock<
+      Promise<MockLinkResult[]>,
+      [string, { limit: number; offset: number }]
+    >;
   };
   readonly accessTokenVerifier: {
     verify: jest.Mock<Promise<VerifiedAccessTokenPayload>, [string]>;
@@ -84,7 +87,10 @@ export async function createMockedLinksApp(
     execute: jest.fn<Promise<MockLinkResult | null>, [string, string]>(),
   };
   const listOwnedLinksUseCase = {
-    execute: jest.fn<Promise<MockLinkResult[]>, [string]>(),
+    execute: jest.fn<
+      Promise<MockLinkResult[]>,
+      [string, { limit: number; offset: number }]
+    >(),
   };
   const accessTokenVerifier = {
     verify: jest.fn<Promise<VerifiedAccessTokenPayload>, [string]>(),

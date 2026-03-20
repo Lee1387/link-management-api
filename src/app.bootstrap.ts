@@ -8,6 +8,7 @@ export type RuntimeNodeEnv = EnvironmentVariables['NODE_ENV'];
 type AppCorsOptions = NonNullable<
   Parameters<NestFastifyApplication['enableCors']>[0]
 >;
+type AppHelmetOptions = Parameters<NestFastifyApplication['register']>[1];
 
 const DEVELOPMENT_LOG_LEVELS: LogLevel[] = [
   'log',
@@ -47,6 +48,26 @@ export function createValidationPipe(nodeEnv: RuntimeNodeEnv): ValidationPipe {
     transform: true,
     disableErrorMessages: nodeEnv === 'production',
   });
+}
+
+export function createHelmetOptions(nodeEnv: RuntimeNodeEnv): AppHelmetOptions {
+  const isProduction = nodeEnv === 'production';
+
+  return {
+    global: true,
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: [`'self'`],
+        styleSrc: isProduction ? [`'self'`] : [`'self'`, `'unsafe-inline'`],
+        imgSrc: isProduction
+          ? [`'self'`, 'data:']
+          : [`'self'`, 'data:', 'validator.swagger.io'],
+        scriptSrc: isProduction
+          ? [`'self'`]
+          : [`'self'`, `'unsafe-inline'`, 'https:'],
+      },
+    },
+  };
 }
 
 export function setupOptionalOpenApi(
@@ -96,16 +117,5 @@ export async function configureApp(
 ): Promise<void> {
   app.enableShutdownHooks();
   app.useGlobalPipes(createValidationPipe(nodeEnv));
-  await app.register(helmet, {
-    global: true,
-    // Nest's Swagger UI needs a looser CSP when served through Fastify.
-    contentSecurityPolicy: {
-      directives: {
-        defaultSrc: [`'self'`],
-        styleSrc: [`'self'`, `'unsafe-inline'`],
-        imgSrc: [`'self'`, 'data:', 'validator.swagger.io'],
-        scriptSrc: [`'self'`, `'unsafe-inline'`, 'https:'],
-      },
-    },
-  });
+  await app.register(helmet, createHelmetOptions(nodeEnv));
 }

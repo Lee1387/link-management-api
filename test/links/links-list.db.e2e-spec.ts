@@ -84,4 +84,47 @@ describe('Links List (db e2e)', () => {
       disabledAt: null,
     });
   });
+
+  it('GET /links should apply limit-based pagination for owned links', async () => {
+    app = await createLinksDbApp();
+    const ownerEmail = `owner.${Date.now().toString(36)}@example.com`;
+    createdEmails.add(ownerEmail);
+
+    await registerUser(app, ownerEmail);
+
+    const ownerLoginBody = await loginUser(app, ownerEmail);
+
+    const firstLinkBody = await createOwnedLink(
+      app,
+      ownerLoginBody.accessToken,
+      'https://example.com/articles/first-link',
+    );
+    createdLinkIds.add(firstLinkBody.id);
+
+    const secondLinkBody = await createOwnedLink(
+      app,
+      ownerLoginBody.accessToken,
+      'https://example.com/articles/second-link',
+    );
+    createdLinkIds.add(secondLinkBody.id);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/links?limit=1',
+      headers: {
+        authorization: `Bearer ${ownerLoginBody.accessToken}`,
+      },
+    });
+    const body: Array<{
+      id: unknown;
+      originalUrl: unknown;
+      shortCode: unknown;
+      disabledAt: unknown;
+      createdAt: unknown;
+      updatedAt: unknown;
+    }> = response.json();
+
+    expect(response.statusCode).toBe(200);
+    expect(body).toHaveLength(1);
+  });
 });

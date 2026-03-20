@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  type FindOwnedLinksPageInput,
   LINK_REPOSITORY,
   type LinkRepository,
 } from '../../domain/link.repository';
@@ -12,7 +13,13 @@ export class ListOwnedLinksUseCase {
     private readonly linkRepository: LinkRepository,
   ) {}
 
-  execute(userId: string): Promise<Link[]> {
-    return this.linkRepository.findByUserId(userId);
+  execute(
+    userId: string,
+    page: Omit<FindOwnedLinksPageInput, 'userId'>,
+  ): Promise<Link[]> {
+    return this.linkRepository.findPageByUserId({
+      userId,
+      ...page,
+    });
   }
 }

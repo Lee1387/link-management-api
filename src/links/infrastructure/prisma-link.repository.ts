@@ -5,6 +5,7 @@ import type { Link } from '../domain/link.entity';
 import { DuplicateShortCodeError } from '../domain/link.errors';
 import type {
   CreateLinkInput,
+  FindOwnedLinksPageInput,
   LinkRepository,
 } from '../domain/link.repository';
 
@@ -68,14 +69,14 @@ export class PrismaLinkRepository implements LinkRepository {
     return toLinkEntity(prismaLink);
   }
 
-  async findByUserId(userId: string): Promise<Link[]> {
+  async findPageByUserId(input: FindOwnedLinksPageInput): Promise<Link[]> {
     const prismaLinks = await this.prismaService.link.findMany({
       where: {
-        userId,
+        userId: input.userId,
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: input.limit,
+      skip: input.offset,
     });
 
     return prismaLinks.map(toLinkEntity);
@@ -101,6 +102,17 @@ export class PrismaLinkRepository implements LinkRepository {
     userId: string,
     disabledAt: Date,
   ): Promise<Link | null> {
+    const disableResult = await this.prismaService.link.updateMany({
+      where: {
+        id,
+        userId,
+        disabledAt: null,
+      },
+      data: {
+        disabledAt,
+      },
+    });
+
     const prismaLink = await this.prismaService.link.findFirst({
       where: {
         id,
@@ -112,19 +124,10 @@ export class PrismaLinkRepository implements LinkRepository {
       return null;
     }
 
-    if (prismaLink.disabledAt !== null) {
+    if (disableResult.count === 0) {
       return toLinkEntity(prismaLink);
     }
 
-    const updatedPrismaLink = await this.prismaService.link.update({
-      where: {
-        id,
-      },
-      data: {
-        disabledAt,
-      },
-    });
-
-    return toLinkEntity(updatedPrismaLink);
+    return toLinkEntity(prismaLink);
   }
 }

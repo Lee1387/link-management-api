@@ -6,10 +6,16 @@ export interface CreateLinkInput {
   userId: string;
 }
 
+export interface FindOwnedLinksPageInput {
+  userId: string;
+  limit: number;
+  offset: number;
+}
+
 export interface LinkRepository {
   create(input: CreateLinkInput): Promise<Link>;
   findByShortCode(shortCode: string): Promise<Link | null>;
-  findByUserId(userId: string): Promise<Link[]>;
+  findPageByUserId(input: FindOwnedLinksPageInput): Promise<Link[]>;
   findByIdAndUserId(id: string, userId: string): Promise<Link | null>;
   disableByIdAndUserId(
     id: string,

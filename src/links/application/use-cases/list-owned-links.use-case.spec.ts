@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ListOwnedLinksUseCase } from './list-owned-links.use-case';
 import {
+  type FindOwnedLinksPageInput,
   LINK_REPOSITORY,
   type LinkRepository,
 } from '../../domain/link.repository';
@@ -9,12 +10,12 @@ import type { Link } from '../../domain/link.entity';
 describe('ListOwnedLinksUseCase', () => {
   let listOwnedLinksUseCase: ListOwnedLinksUseCase;
   let linkRepository: {
-    findByUserId: jest.Mock<Promise<Link[]>, [string]>;
+    findPageByUserId: jest.Mock<Promise<Link[]>, [FindOwnedLinksPageInput]>;
   };
 
   beforeEach(async () => {
     linkRepository = {
-      findByUserId: jest.fn<Promise<Link[]>, [string]>(),
+      findPageByUserId: jest.fn<Promise<Link[]>, [FindOwnedLinksPageInput]>(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -24,7 +25,7 @@ describe('ListOwnedLinksUseCase', () => {
           provide: LINK_REPOSITORY,
           useValue: linkRepository satisfies Pick<
             LinkRepository,
-            'findByUserId'
+            'findPageByUserId'
           >,
         },
       ],
@@ -54,21 +55,35 @@ describe('ListOwnedLinksUseCase', () => {
         updatedAt: new Date('2026-03-18T13:10:00.000Z'),
       },
     ];
-    linkRepository.findByUserId.mockResolvedValue(links);
+    linkRepository.findPageByUserId.mockResolvedValue(links);
 
-    await expect(listOwnedLinksUseCase.execute('user_123')).resolves.toEqual(
-      links,
-    );
-    expect(linkRepository.findByUserId).toHaveBeenCalledWith('user_123');
-    expect(linkRepository.findByUserId).toHaveBeenCalledTimes(1);
+    await expect(
+      listOwnedLinksUseCase.execute('user_123', {
+        limit: 25,
+        offset: 0,
+      }),
+    ).resolves.toEqual(links);
+    expect(linkRepository.findPageByUserId).toHaveBeenCalledWith({
+      userId: 'user_123',
+      limit: 25,
+      offset: 0,
+    });
+    expect(linkRepository.findPageByUserId).toHaveBeenCalledTimes(1);
   });
 
   it('should return an empty list when the user has no links', async () => {
-    linkRepository.findByUserId.mockResolvedValue([]);
+    linkRepository.findPageByUserId.mockResolvedValue([]);
 
-    await expect(listOwnedLinksUseCase.execute('user_123')).resolves.toEqual(
-      [],
-    );
-    expect(linkRepository.findByUserId).toHaveBeenCalledWith('user_123');
+    await expect(
+      listOwnedLinksUseCase.execute('user_123', {
+        limit: 10,
+        offset: 20,
+      }),
+    ).resolves.toEqual([]);
+    expect(linkRepository.findPageByUserId).toHaveBeenCalledWith({
+      userId: 'user_123',
+      limit: 10,
+      offset: 20,
+    });
   });
 });

@@ -1,6 +1,7 @@
 import {
   createCorsOptions,
   createAppLogger,
+  createHelmetOptions,
   createValidationPipe,
   resolveNodeEnv,
   setupOptionalCors,
@@ -58,6 +59,42 @@ describe('app bootstrap runtime configuration', () => {
       json: false,
       colors: true,
       timestamp: true,
+    });
+  });
+
+  it('should use a stricter CSP in production when Swagger is disabled', () => {
+    const helmetOptions = createHelmetOptions('production') as {
+      contentSecurityPolicy?: {
+        directives?: {
+          styleSrc?: string[];
+          imgSrc?: string[];
+          scriptSrc?: string[];
+        };
+      };
+    };
+
+    expect(helmetOptions.contentSecurityPolicy?.directives).toMatchObject({
+      styleSrc: [`'self'`],
+      imgSrc: [`'self'`, 'data:'],
+      scriptSrc: [`'self'`],
+    });
+  });
+
+  it('should keep the Swagger-compatible CSP outside production', () => {
+    const helmetOptions = createHelmetOptions('development') as {
+      contentSecurityPolicy?: {
+        directives?: {
+          styleSrc?: string[];
+          imgSrc?: string[];
+          scriptSrc?: string[];
+        };
+      };
+    };
+
+    expect(helmetOptions.contentSecurityPolicy?.directives).toMatchObject({
+      styleSrc: [`'self'`, `'unsafe-inline'`],
+      imgSrc: [`'self'`, 'data:', 'validator.swagger.io'],
+      scriptSrc: [`'self'`, `'unsafe-inline'`, 'https:'],
     });
   });
 

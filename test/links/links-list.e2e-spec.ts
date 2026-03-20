@@ -84,9 +84,42 @@ describe('Links List (e2e)', () => {
     ]);
     expect(mocked.listOwnedLinksUseCase.execute).toHaveBeenCalledWith(
       'user_123',
+      {
+        limit: 25,
+        offset: 0,
+      },
     );
     expect(mocked.accessTokenVerifier.verify).toHaveBeenCalledWith(
       'signed-jwt-token',
+    );
+  });
+
+  it('GET /links should pass pagination query parameters through to the use case', async () => {
+    const mocked = await createMockedLinksApp(
+      createMockedLinksPrismaQueryExecutor(),
+    );
+    app = mocked.app;
+    mocked.accessTokenVerifier.verify.mockResolvedValue(
+      TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
+    );
+    mocked.listOwnedLinksUseCase.execute.mockResolvedValue([]);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/links?limit=10&offset=20',
+      headers: {
+        authorization: 'Bearer signed-jwt-token',
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual([]);
+    expect(mocked.listOwnedLinksUseCase.execute).toHaveBeenCalledWith(
+      'user_123',
+      {
+        limit: 10,
+        offset: 20,
+      },
     );
   });
 

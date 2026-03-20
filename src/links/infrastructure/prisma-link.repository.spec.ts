@@ -1,7 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrismaService } from '../../prisma/prisma.service';
 import { DuplicateShortCodeError } from '../domain/link.errors';
-import { type CreateLinkInput } from '../domain/link.repository';
+import {
+  type CreateLinkInput,
+  type FindOwnedLinksPageInput,
+} from '../domain/link.repository';
 import { PrismaLinkRepository } from './prisma-link.repository';
 
 describe('PrismaLinkRepository', () => {
@@ -55,20 +58,20 @@ describe('PrismaLinkRepository', () => {
         [
           {
             where: { userId: string };
-            orderBy: { createdAt: 'desc' };
+            orderBy: Array<{ createdAt: 'desc' } | { id: 'desc' }>;
+            take: number;
+            skip: number;
           },
         ]
       >;
-      update: jest.Mock<
-        Promise<{
-          id: string;
-          originalUrl: string;
-          shortCode: string;
-          disabledAt: Date | null;
-          createdAt: Date;
-          updatedAt: Date;
-        }>,
-        [{ where: { id: string }; data: { disabledAt: Date } }]
+      updateMany: jest.Mock<
+        Promise<{ count: number }>,
+        [
+          {
+            where: { id: string; userId: string; disabledAt: null };
+            data: { disabledAt: Date };
+          },
+        ]
       >;
     };
   };
@@ -123,20 +126,20 @@ describe('PrismaLinkRepository', () => {
           [
             {
               where: { userId: string };
-              orderBy: { createdAt: 'desc' };
+              orderBy: Array<{ createdAt: 'desc' } | { id: 'desc' }>;
+              take: number;
+              skip: number;
             },
           ]
         >(),
-        update: jest.fn<
-          Promise<{
-            id: string;
-            originalUrl: string;
-            shortCode: string;
-            disabledAt: Date | null;
-            createdAt: Date;
-            updatedAt: Date;
-          }>,
-          [{ where: { id: string }; data: { disabledAt: Date } }]
+        updateMany: jest.fn<
+          Promise<{ count: number }>,
+          [
+            {
+              where: { id: string; userId: string; disabledAt: null };
+              data: { disabledAt: Date };
+            },
+          ]
         >(),
       },
     };
@@ -229,7 +232,12 @@ describe('PrismaLinkRepository', () => {
     });
   });
 
-  it('should resolve links by user id ordered by newest first', async () => {
+  it('should resolve an owned links page ordered by newest first', async () => {
+    const page: FindOwnedLinksPageInput = {
+      userId: 'user_123',
+      limit: 25,
+      offset: 10,
+    };
     const prismaLinks = [
       {
         id: 'link_456',
@@ -250,16 +258,16 @@ describe('PrismaLinkRepository', () => {
     ];
     prismaService.link.findMany.mockResolvedValue(prismaLinks);
 
-    await expect(
-      prismaLinkRepository.findByUserId('user_123'),
-    ).resolves.toEqual(prismaLinks);
+    await expect(prismaLinkRepository.findPageByUserId(page)).resolves.toEqual(
+      prismaLinks,
+    );
     expect(prismaService.link.findMany).toHaveBeenCalledWith({
       where: {
         userId: 'user_123',
       },
-      orderBy: {
-        createdAt: 'desc',
-      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'desc' }],
+      take: 25,
+      skip: 10,
     });
   });
 
@@ -314,8 +322,8 @@ describe('PrismaLinkRepository', () => {
       disabledAt,
       updatedAt: new Date('2026-03-19T20:00:00.000Z'),
     };
-    prismaService.link.findFirst.mockResolvedValue(prismaLink);
-    prismaService.link.update.mockResolvedValue(updatedPrismaLink);
+    prismaService.link.updateMany.mockResolvedValue({ count: 1 });
+    prismaService.link.findFirst.mockResolvedValue(updatedPrismaLink);
 
     await expect(
       prismaLinkRepository.disableByIdAndUserId(
@@ -324,23 +332,26 @@ describe('PrismaLinkRepository', () => {
         disabledAt,
       ),
     ).resolves.toEqual(updatedPrismaLink);
+    expect(prismaService.link.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'link_123',
+        userId: 'user_123',
+        disabledAt: null,
+      },
+      data: {
+        disabledAt,
+      },
+    });
     expect(prismaService.link.findFirst).toHaveBeenCalledWith({
       where: {
         id: 'link_123',
         userId: 'user_123',
       },
     });
-    expect(prismaService.link.update).toHaveBeenCalledWith({
-      where: {
-        id: 'link_123',
-      },
-      data: {
-        disabledAt,
-      },
-    });
   });
 
   it('should return null when disabling an owned link that does not exist', async () => {
+    prismaService.link.updateMany.mockResolvedValue({ count: 0 });
     prismaService.link.findFirst.mockResolvedValue(null);
 
     await expect(
@@ -350,7 +361,7 @@ describe('PrismaLinkRepository', () => {
         new Date('2026-03-19T20:00:00.000Z'),
       ),
     ).resolves.toBeNull();
-    expect(prismaService.link.update).not.toHaveBeenCalled();
+    expect(prismaService.link.updateMany).toHaveBeenCalledTimes(1);
   });
 
   it('should not update a link that is already disabled', async () => {
@@ -362,6 +373,7 @@ describe('PrismaLinkRepository', () => {
       createdAt: new Date('2026-03-18T13:10:00.000Z'),
       updatedAt: new Date('2026-03-19T19:00:00.000Z'),
     };
+    prismaService.link.updateMany.mockResolvedValue({ count: 0 });
     prismaService.link.findFirst.mockResolvedValue(prismaLink);
 
     await expect(
@@ -371,6 +383,15 @@ describe('PrismaLinkRepository', () => {
         new Date('2026-03-19T20:00:00.000Z'),
       ),
     ).resolves.toEqual(prismaLink);
-    expect(prismaService.link.update).not.toHaveBeenCalled();
+    expect(prismaService.link.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 'link_123',
+        userId: 'user_123',
+        disabledAt: null,
+      },
+      data: {
+        disabledAt: new Date('2026-03-19T20:00:00.000Z'),
+      },
+    });
   });
 });

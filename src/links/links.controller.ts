@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { SkipThrottle, Throttle, ThrottlerGuard } from '@nestjs/throttler';
@@ -37,6 +38,10 @@ import {
   toOwnedLinkResponseDtos,
 } from './dto/owned-link-response.dto';
 import {
+  ListOwnedLinksQueryDto,
+  toListOwnedLinksPage,
+} from './dto/list-owned-links-query.dto';
+import {
   SKIP_AUTH_RATE_LIMIT,
   WRITE_RATE_LIMIT,
 } from '../rate-limit/rate-limit.policies';
@@ -67,8 +72,12 @@ export class LinksController {
   @UseGuards(JwtAuthGuard)
   async listOwned(
     @CurrentUser() user: AuthenticatedRequestUser,
+    @Query() query: ListOwnedLinksQueryDto,
   ): Promise<OwnedLinkResponseDto[]> {
-    const links = await this.listOwnedLinksUseCase.execute(user.id);
+    const links = await this.listOwnedLinksUseCase.execute(
+      user.id,
+      toListOwnedLinksPage(query),
+    );
 
     return toOwnedLinkResponseDtos(links);
   }
