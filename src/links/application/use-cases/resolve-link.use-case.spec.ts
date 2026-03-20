@@ -51,6 +51,23 @@ describe('ResolveLinkUseCase', () => {
     expect(linkRepository.findByShortCode).toHaveBeenCalledTimes(1);
   });
 
+  it('should return null when the link is disabled', async () => {
+    const link: Link = {
+      id: 'link_123',
+      originalUrl: 'https://example.com/articles/clean-architecture',
+      shortCode: 'abc123X',
+      disabledAt: new Date('2026-03-20T10:00:00.000Z'),
+      createdAt: new Date('2026-03-18T13:10:00.000Z'),
+      updatedAt: new Date('2026-03-20T10:00:00.000Z'),
+    };
+    linkRepository.findByShortCode.mockResolvedValue(link);
+
+    await expect(
+      resolveLinkUseCase.execute(link.shortCode),
+    ).resolves.toBeNull();
+    expect(linkRepository.findByShortCode).toHaveBeenCalledWith(link.shortCode);
+  });
+
   it('should return null when a short code does not exist', async () => {
     linkRepository.findByShortCode.mockResolvedValue(null);
 

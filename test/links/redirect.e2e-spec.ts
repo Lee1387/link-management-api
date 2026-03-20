@@ -21,6 +21,7 @@ describe('Redirect (e2e)', () => {
         id: string;
         originalUrl: string;
         shortCode: string;
+        disabledAt: Date | null;
         createdAt: Date;
         updatedAt: Date;
       } | null>,
@@ -50,6 +51,7 @@ describe('Redirect (e2e)', () => {
           id: string;
           originalUrl: string;
           shortCode: string;
+          disabledAt: Date | null;
           createdAt: Date;
           updatedAt: Date;
         } | null>,
@@ -78,6 +80,7 @@ describe('Redirect (e2e)', () => {
       id: 'link_123',
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123X',
+      disabledAt: null,
       createdAt: new Date('2026-03-18T13:10:00.000Z'),
       updatedAt: new Date('2026-03-18T13:10:00.000Z'),
     });
@@ -92,6 +95,29 @@ describe('Redirect (e2e)', () => {
       'https://example.com/articles/clean-architecture',
     );
     expect(resolveLinkUseCase.execute).toHaveBeenCalledWith('abc123X');
+  });
+
+  it('GET /:shortCode should return not found when the short code is disabled', async () => {
+    app = await createApp({
+      $queryRaw: jest.fn<
+        Promise<unknown>,
+        [TemplateStringsArray, ...unknown[]]
+      >(),
+    });
+    resolveLinkUseCase.execute.mockResolvedValue(null);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/disabled',
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      message: 'Link not found.',
+      error: 'Not Found',
+      statusCode: 404,
+    });
+    expect(resolveLinkUseCase.execute).toHaveBeenCalledWith('disabled');
   });
 
   it('GET /:shortCode should return not found when the short code does not exist', async () => {

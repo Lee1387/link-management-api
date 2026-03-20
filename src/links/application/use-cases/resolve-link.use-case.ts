@@ -12,7 +12,13 @@ export class ResolveLinkUseCase {
     private readonly linkRepository: LinkRepository,
   ) {}
 
-  execute(shortCode: string): Promise<Link | null> {
-    return this.linkRepository.findByShortCode(shortCode);
+  async execute(shortCode: string): Promise<Link | null> {
+    const link = await this.linkRepository.findByShortCode(shortCode);
+
+    if (link === null || link.disabledAt !== null) {
+      return null;
+    }
+
+    return link;
   }
 }

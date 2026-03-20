@@ -90,4 +90,41 @@ describe('Redirect (db e2e)', () => {
       'https://example.com/articles/clean-architecture',
     );
   });
+
+  it('GET /:shortCode should return not found when the link is disabled', async () => {
+    app = await createApp();
+    const prismaService = app.get(PrismaService);
+    const email = `disabled.${Date.now().toString(36)}@example.com`;
+    const shortCode = `off${Date.now().toString(36)}x`;
+    createdEmails.add(email);
+    createdShortCodes.add(shortCode);
+
+    const user = await prismaService.user.create({
+      data: {
+        email,
+        passwordHash: 'hashed-password',
+      },
+    });
+
+    await prismaService.link.create({
+      data: {
+        originalUrl: 'https://example.com/articles/disabled-link',
+        shortCode,
+        disabledAt: new Date('2026-03-20T10:00:00.000Z'),
+        userId: user.id,
+      },
+    });
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/${shortCode}`,
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      message: 'Link not found.',
+      error: 'Not Found',
+      statusCode: 404,
+    });
+  });
 });
