@@ -71,6 +71,7 @@ describe('Links List (db e2e)', () => {
       id: unknown;
       originalUrl: unknown;
       shortCode: unknown;
+      disabledAt: unknown;
       createdAt: unknown;
       updatedAt: unknown;
     }> = response.json();
@@ -80,6 +81,7 @@ describe('Links List (db e2e)', () => {
     expect(body[0]).toMatchObject({
       id: ownerLinkBody.id,
       originalUrl: 'https://example.com/articles/owned-link',
+      disabledAt: null,
     });
   });
 });

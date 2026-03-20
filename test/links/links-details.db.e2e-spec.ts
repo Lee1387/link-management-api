@@ -71,6 +71,7 @@ describe('Links Details (db e2e)', () => {
       id: unknown;
       originalUrl: unknown;
       shortCode: unknown;
+      disabledAt: unknown;
       createdAt: unknown;
       updatedAt: unknown;
     } = response.json();
@@ -79,6 +80,7 @@ describe('Links Details (db e2e)', () => {
     expect(body).toMatchObject({
       id: ownerLinkBody.id,
       originalUrl: ownerLinkBody.originalUrl,
+      disabledAt: null,
     });
 
     const forbiddenResponse = await app.inject({

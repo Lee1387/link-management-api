@@ -19,6 +19,7 @@ describe('OwnedLinkResponseDto', () => {
       id: 'link_123',
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123X',
+      disabledAt: null,
       createdAt: '2026-03-18T13:10:00.000Z',
       updatedAt: '2026-03-18T13:10:00.000Z',
     });
@@ -30,9 +31,26 @@ describe('OwnedLinkResponseDto', () => {
         id: 'link_123',
         originalUrl: 'https://example.com/articles/clean-architecture',
         shortCode: 'abc123X',
+        disabledAt: null,
         createdAt: '2026-03-18T13:10:00.000Z',
         updatedAt: '2026-03-18T13:10:00.000Z',
       },
     ]);
+  });
+
+  it('should map a disabled link entity with an ISO disabled timestamp', () => {
+    expect(
+      toOwnedLinkResponseDto({
+        ...link,
+        disabledAt: new Date('2026-03-20T10:00:00.000Z'),
+      }),
+    ).toEqual({
+      id: 'link_123',
+      originalUrl: 'https://example.com/articles/clean-architecture',
+      shortCode: 'abc123X',
+      disabledAt: '2026-03-20T10:00:00.000Z',
+      createdAt: '2026-03-18T13:10:00.000Z',
+      updatedAt: '2026-03-18T13:10:00.000Z',
+    });
   });
 });
