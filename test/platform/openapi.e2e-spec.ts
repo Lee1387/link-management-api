@@ -105,6 +105,10 @@ describe('OpenAPI (e2e)', () => {
     expect(
       (body.paths['/links/{id}'] as Record<string, unknown>) ?? {},
     ).toHaveProperty('get');
+    expect(body.paths).toHaveProperty('/links/{id}/disable');
+    expect(
+      (body.paths['/links/{id}/disable'] as Record<string, unknown>) ?? {},
+    ).toHaveProperty('patch');
     expect(body.paths).toHaveProperty('/{shortCode}');
   });
 });

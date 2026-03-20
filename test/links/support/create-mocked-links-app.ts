@@ -5,6 +5,7 @@ import {
   type VerifiedAccessTokenPayload,
 } from './../../../src/auth/application/ports/access-token-verifier';
 import { CreateLinkUseCase } from './../../../src/links/application/use-cases/create-link.use-case';
+import { DisableOwnedLinkUseCase } from './../../../src/links/application/use-cases/disable-owned-link.use-case';
 import { GetOwnedLinkDetailsUseCase } from './../../../src/links/application/use-cases/get-owned-link-details.use-case';
 import { ListOwnedLinksUseCase } from './../../../src/links/application/use-cases/list-owned-links.use-case';
 import { PrismaService } from './../../../src/prisma/prisma.service';
@@ -53,6 +54,9 @@ export interface MockedLinksApp {
       [{ originalUrl: string; userId: string }]
     >;
   };
+  readonly disableOwnedLinkUseCase: {
+    execute: jest.Mock<Promise<MockLinkResult | null>, [string, string]>;
+  };
   readonly getOwnedLinkDetailsUseCase: {
     execute: jest.Mock<Promise<MockLinkResult | null>, [string, string]>;
   };
@@ -73,6 +77,9 @@ export async function createMockedLinksApp(
       [{ originalUrl: string; userId: string }]
     >(),
   };
+  const disableOwnedLinkUseCase = {
+    execute: jest.fn<Promise<MockLinkResult | null>, [string, string]>(),
+  };
   const getOwnedLinkDetailsUseCase = {
     execute: jest.fn<Promise<MockLinkResult | null>, [string, string]>(),
   };
@@ -90,6 +97,8 @@ export async function createMockedLinksApp(
         .useValue(prismaService)
         .overrideProvider(ACCESS_TOKEN_VERIFIER)
         .useValue(accessTokenVerifier satisfies AccessTokenVerifier)
+        .overrideProvider(DisableOwnedLinkUseCase)
+        .useValue(disableOwnedLinkUseCase)
         .overrideProvider(GetOwnedLinkDetailsUseCase)
         .useValue(getOwnedLinkDetailsUseCase)
         .overrideProvider(ListOwnedLinksUseCase)
@@ -101,6 +110,7 @@ export async function createMockedLinksApp(
   return {
     app,
     createLinkUseCase,
+    disableOwnedLinkUseCase,
     getOwnedLinkDetailsUseCase,
     listOwnedLinksUseCase,
     accessTokenVerifier,

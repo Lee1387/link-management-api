@@ -21,6 +21,10 @@ export interface CreatedLinkBody {
   readonly updatedAt: string;
 }
 
+export interface DisabledOwnedLinkBody extends CreatedLinkBody {
+  readonly disabledAt: string | null;
+}
+
 export function createLinksDbApp(): Promise<NestFastifyApplication> {
   return createTestApp();
 }
@@ -122,6 +126,28 @@ export async function createOwnedLink(
   if (response.statusCode !== 201) {
     throw new Error(
       `Expected link creation to return 201, received ${response.statusCode}.`,
+    );
+  }
+
+  return response.json();
+}
+
+export async function disableOwnedLink(
+  app: NestFastifyApplication,
+  accessToken: string,
+  id: string,
+): Promise<DisabledOwnedLinkBody> {
+  const response = await app.inject({
+    method: 'PATCH',
+    url: `/links/${id}/disable`,
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (response.statusCode !== 200) {
+    throw new Error(
+      `Expected link disable to return 200, received ${response.statusCode}.`,
     );
   }
 

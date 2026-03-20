@@ -4,6 +4,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
@@ -21,6 +22,7 @@ import { CurrentUser } from '../auth/http/current-user.decorator';
 import { JwtAuthGuard } from '../auth/http/jwt-auth.guard';
 import type { AuthenticatedRequestUser } from '../auth/http/authenticated-request-user';
 import { CreateLinkUseCase } from './application/use-cases/create-link.use-case';
+import { DisableOwnedLinkUseCase } from './application/use-cases/disable-owned-link.use-case';
 import { GetOwnedLinkDetailsUseCase } from './application/use-cases/get-owned-link-details.use-case';
 import { ListOwnedLinksUseCase } from './application/use-cases/list-owned-links.use-case';
 import { CreateLinkDto } from './dto/create-link.dto';
@@ -39,6 +41,7 @@ import {
 export class LinksController {
   constructor(
     private readonly createLinkUseCase: CreateLinkUseCase,
+    private readonly disableOwnedLinkUseCase: DisableOwnedLinkUseCase,
     private readonly getOwnedLinkDetailsUseCase: GetOwnedLinkDetailsUseCase,
     private readonly listOwnedLinksUseCase: ListOwnedLinksUseCase,
   ) {}
@@ -92,6 +95,41 @@ export class LinksController {
     @Param('id') id: string,
   ): Promise<OwnedLinkDetailsResponseDto> {
     const link = await this.getOwnedLinkDetailsUseCase.execute(id, user.id);
+
+    if (link === null) {
+      throw new NotFoundException('Link not found.');
+    }
+
+    return toOwnedLinkDetailsResponseDto(link);
+  }
+
+  @Patch(':id/disable')
+  @ApiOperation({
+    summary: 'Disable an authenticated user link',
+    description:
+      'Disables a shortened link owned by the authenticated user so it no longer resolves publicly.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique identifier of the owned link to disable.',
+    example: 'cm8f4b2zy0000s6m8x2v0q3lp',
+  })
+  @ApiOkResponse({
+    description: 'The owned link was disabled successfully.',
+    type: OwnedLinkDetailsResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'The requested owned link does not exist.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'A valid bearer token is required to disable an owned link.',
+  })
+  @UseGuards(JwtAuthGuard)
+  async disableOwned(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Param('id') id: string,
+  ): Promise<OwnedLinkDetailsResponseDto> {
+    const link = await this.disableOwnedLinkUseCase.execute(id, user.id);
 
     if (link === null) {
       throw new NotFoundException('Link not found.');
