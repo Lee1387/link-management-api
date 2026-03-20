@@ -6,6 +6,7 @@ import {
 } from './../../../src/auth/application/ports/access-token-verifier';
 import { CreateLinkUseCase } from './../../../src/links/application/use-cases/create-link.use-case';
 import { DisableOwnedLinkUseCase } from './../../../src/links/application/use-cases/disable-owned-link.use-case';
+import { EnableOwnedLinkUseCase } from './../../../src/links/application/use-cases/enable-owned-link.use-case';
 import { GetOwnedLinkDetailsUseCase } from './../../../src/links/application/use-cases/get-owned-link-details.use-case';
 import { ListOwnedLinksUseCase } from './../../../src/links/application/use-cases/list-owned-links.use-case';
 import { PrismaService } from './../../../src/prisma/prisma.service';
@@ -57,6 +58,9 @@ export interface MockedLinksApp {
   readonly disableOwnedLinkUseCase: {
     execute: jest.Mock<Promise<MockLinkResult | null>, [string, string]>;
   };
+  readonly enableOwnedLinkUseCase: {
+    execute: jest.Mock<Promise<MockLinkResult | null>, [string, string]>;
+  };
   readonly getOwnedLinkDetailsUseCase: {
     execute: jest.Mock<Promise<MockLinkResult | null>, [string, string]>;
   };
@@ -83,6 +87,9 @@ export async function createMockedLinksApp(
   const disableOwnedLinkUseCase = {
     execute: jest.fn<Promise<MockLinkResult | null>, [string, string]>(),
   };
+  const enableOwnedLinkUseCase = {
+    execute: jest.fn<Promise<MockLinkResult | null>, [string, string]>(),
+  };
   const getOwnedLinkDetailsUseCase = {
     execute: jest.fn<Promise<MockLinkResult | null>, [string, string]>(),
   };
@@ -105,6 +112,8 @@ export async function createMockedLinksApp(
         .useValue(accessTokenVerifier satisfies AccessTokenVerifier)
         .overrideProvider(DisableOwnedLinkUseCase)
         .useValue(disableOwnedLinkUseCase)
+        .overrideProvider(EnableOwnedLinkUseCase)
+        .useValue(enableOwnedLinkUseCase)
         .overrideProvider(GetOwnedLinkDetailsUseCase)
         .useValue(getOwnedLinkDetailsUseCase)
         .overrideProvider(ListOwnedLinksUseCase)
@@ -117,6 +126,7 @@ export async function createMockedLinksApp(
     app,
     createLinkUseCase,
     disableOwnedLinkUseCase,
+    enableOwnedLinkUseCase,
     getOwnedLinkDetailsUseCase,
     listOwnedLinksUseCase,
     accessTokenVerifier,

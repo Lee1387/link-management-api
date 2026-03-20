@@ -25,6 +25,7 @@ import { JwtAuthGuard } from '../auth/http/jwt-auth.guard';
 import type { AuthenticatedRequestUser } from '../auth/http/authenticated-request-user';
 import { CreateLinkUseCase } from './application/use-cases/create-link.use-case';
 import { DisableOwnedLinkUseCase } from './application/use-cases/disable-owned-link.use-case';
+import { EnableOwnedLinkUseCase } from './application/use-cases/enable-owned-link.use-case';
 import { GetOwnedLinkDetailsUseCase } from './application/use-cases/get-owned-link-details.use-case';
 import { ListOwnedLinksUseCase } from './application/use-cases/list-owned-links.use-case';
 import { CreateLinkDto } from './dto/create-link.dto';
@@ -52,6 +53,7 @@ export class LinksController {
   constructor(
     private readonly createLinkUseCase: CreateLinkUseCase,
     private readonly disableOwnedLinkUseCase: DisableOwnedLinkUseCase,
+    private readonly enableOwnedLinkUseCase: EnableOwnedLinkUseCase,
     private readonly getOwnedLinkDetailsUseCase: GetOwnedLinkDetailsUseCase,
     private readonly listOwnedLinksUseCase: ListOwnedLinksUseCase,
   ) {}
@@ -146,6 +148,43 @@ export class LinksController {
     @Param('id') id: string,
   ): Promise<OwnedLinkDetailsResponseDto> {
     const link = await this.disableOwnedLinkUseCase.execute(id, user.id);
+
+    if (link === null) {
+      throw new NotFoundException('Link not found.');
+    }
+
+    return toOwnedLinkDetailsResponseDto(link);
+  }
+
+  @Patch(':id/enable')
+  @ApiOperation({
+    summary: 'Enable an authenticated user link',
+    description:
+      'Enables a shortened link owned by the authenticated user so it can resolve publicly again.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique identifier of the owned link to enable.',
+    example: 'cm8f4b2zy0000s6m8x2v0q3lp',
+  })
+  @ApiOkResponse({
+    description: 'The owned link was enabled successfully.',
+    type: OwnedLinkDetailsResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'The requested owned link does not exist.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'A valid bearer token is required to enable an owned link.',
+  })
+  @SkipThrottle(SKIP_AUTH_RATE_LIMIT)
+  @Throttle(WRITE_RATE_LIMIT)
+  @UseGuards(ThrottlerGuard, JwtAuthGuard)
+  async enableOwned(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Param('id') id: string,
+  ): Promise<OwnedLinkDetailsResponseDto> {
+    const link = await this.enableOwnedLinkUseCase.execute(id, user.id);
 
     if (link === null) {
       throw new NotFoundException('Link not found.');

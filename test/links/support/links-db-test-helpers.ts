@@ -153,3 +153,25 @@ export async function disableOwnedLink(
 
   return response.json();
 }
+
+export async function enableOwnedLink(
+  app: NestFastifyApplication,
+  accessToken: string,
+  id: string,
+): Promise<DisabledOwnedLinkBody> {
+  const response = await app.inject({
+    method: 'PATCH',
+    url: `/links/${id}/enable`,
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (response.statusCode !== 200) {
+    throw new Error(
+      `Expected link enable to return 200, received ${response.statusCode}.`,
+    );
+  }
+
+  return response.json();
+}
