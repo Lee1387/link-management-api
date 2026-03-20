@@ -3,8 +3,8 @@ import { EnableOwnedLinkUseCase } from './enable-owned-link.use-case';
 import {
   LINK_REPOSITORY,
   type LinkRepository,
-} from '../../domain/link.repository';
-import type { Link } from '../../domain/link.entity';
+} from '../../../domain/link.repository';
+import type { Link } from '../../../domain/link.entity';
 
 describe('EnableOwnedLinkUseCase', () => {
   let enableOwnedLinkUseCase: EnableOwnedLinkUseCase;

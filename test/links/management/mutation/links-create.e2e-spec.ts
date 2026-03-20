@@ -1,17 +1,17 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
-import { InvalidAccessTokenError } from './../../../src/auth/domain/auth-user.errors';
+import { InvalidAccessTokenError } from './../../../../src/auth/domain/auth-user.errors';
 import {
   createMockedLinksApp,
   createMockedLinksPrismaQueryExecutor,
   TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
-} from '../support/create-mocked-links-app';
+} from './../../support/create-mocked-links-app';
 import {
   applyTestEnvironment,
   captureTestEnvironment,
   restoreTestEnvironment,
-} from './../../support/test-environment';
+} from './../../../support/test-environment';
 
-describe('Links List (e2e)', () => {
+describe('Links Create (e2e)', () => {
   const environmentSnapshot = captureTestEnvironment();
   let app: NestFastifyApplication | null = null;
 
@@ -28,7 +28,7 @@ describe('Links List (e2e)', () => {
     restoreTestEnvironment(environmentSnapshot);
   });
 
-  it('GET /links should return the authenticated user owned links', async () => {
+  it('POST /links should create a short link', async () => {
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
     );
@@ -36,65 +36,44 @@ describe('Links List (e2e)', () => {
     mocked.accessTokenVerifier.verify.mockResolvedValue(
       TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
     );
-    mocked.listOwnedLinksUseCase.execute.mockResolvedValue([
-      {
-        id: 'link_456',
-        originalUrl: 'https://example.com/articles/testing',
-        shortCode: 'new456X',
-        disabledAt: null,
-        createdAt: new Date('2026-03-19T10:00:00.000Z'),
-        updatedAt: new Date('2026-03-19T10:00:00.000Z'),
-      },
-      {
-        id: 'link_123',
-        originalUrl: 'https://example.com/articles/clean-architecture',
-        shortCode: 'abc123X',
-        disabledAt: null,
-        createdAt: new Date('2026-03-18T13:10:00.000Z'),
-        updatedAt: new Date('2026-03-18T13:10:00.000Z'),
-      },
-    ]);
+    mocked.createLinkUseCase.execute.mockResolvedValue({
+      id: 'link_123',
+      originalUrl: 'https://example.com/articles/clean-architecture',
+      shortCode: 'abc123X',
+      disabledAt: null,
+      createdAt: new Date('2026-03-18T13:10:00.000Z'),
+      updatedAt: new Date('2026-03-18T13:10:00.000Z'),
+    });
 
     const response = await app.inject({
-      method: 'GET',
+      method: 'POST',
       url: '/links',
       headers: {
         authorization: 'Bearer signed-jwt-token',
       },
+      payload: {
+        originalUrl: 'https://example.com/articles/clean-architecture',
+      },
     });
 
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual([
-      {
-        id: 'link_456',
-        originalUrl: 'https://example.com/articles/testing',
-        shortCode: 'new456X',
-        disabledAt: null,
-        createdAt: '2026-03-19T10:00:00.000Z',
-        updatedAt: '2026-03-19T10:00:00.000Z',
-      },
-      {
-        id: 'link_123',
-        originalUrl: 'https://example.com/articles/clean-architecture',
-        shortCode: 'abc123X',
-        disabledAt: null,
-        createdAt: '2026-03-18T13:10:00.000Z',
-        updatedAt: '2026-03-18T13:10:00.000Z',
-      },
-    ]);
-    expect(mocked.listOwnedLinksUseCase.execute).toHaveBeenCalledWith(
-      'user_123',
-      {
-        limit: 25,
-        offset: 0,
-      },
-    );
+    expect(response.statusCode).toBe(201);
+    expect(response.json()).toEqual({
+      id: 'link_123',
+      originalUrl: 'https://example.com/articles/clean-architecture',
+      shortCode: 'abc123X',
+      createdAt: '2026-03-18T13:10:00.000Z',
+      updatedAt: '2026-03-18T13:10:00.000Z',
+    });
+    expect(mocked.createLinkUseCase.execute).toHaveBeenCalledWith({
+      originalUrl: 'https://example.com/articles/clean-architecture',
+      userId: 'user_123',
+    });
     expect(mocked.accessTokenVerifier.verify).toHaveBeenCalledWith(
       'signed-jwt-token',
     );
   });
 
-  it('GET /links should pass pagination query parameters through to the use case', async () => {
+  it('POST /links should reject invalid request bodies', async () => {
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
     );
@@ -102,36 +81,39 @@ describe('Links List (e2e)', () => {
     mocked.accessTokenVerifier.verify.mockResolvedValue(
       TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
     );
-    mocked.listOwnedLinksUseCase.execute.mockResolvedValue([]);
 
     const response = await app.inject({
-      method: 'GET',
-      url: '/links?limit=10&offset=20',
+      method: 'POST',
+      url: '/links',
       headers: {
         authorization: 'Bearer signed-jwt-token',
       },
+      payload: {
+        originalUrl: 'not-a-url',
+      },
     });
 
-    expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual([]);
-    expect(mocked.listOwnedLinksUseCase.execute).toHaveBeenCalledWith(
-      'user_123',
-      {
-        limit: 10,
-        offset: 20,
-      },
-    );
+    expect(response.statusCode).toBe(400);
+    expect(response.json()).toEqual({
+      statusCode: 400,
+      message: ['originalUrl must be a URL address'],
+      error: 'Bad Request',
+    });
+    expect(mocked.createLinkUseCase.execute).not.toHaveBeenCalled();
   });
 
-  it('GET /links should reject requests without a bearer token', async () => {
+  it('POST /links should reject requests without a bearer token', async () => {
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
     );
     app = mocked.app;
 
     const response = await app.inject({
-      method: 'GET',
+      method: 'POST',
       url: '/links',
+      payload: {
+        originalUrl: 'https://example.com/articles/clean-architecture',
+      },
     });
 
     expect(response.statusCode).toBe(401);
@@ -141,10 +123,10 @@ describe('Links List (e2e)', () => {
       statusCode: 401,
     });
     expect(mocked.accessTokenVerifier.verify).not.toHaveBeenCalled();
-    expect(mocked.listOwnedLinksUseCase.execute).not.toHaveBeenCalled();
+    expect(mocked.createLinkUseCase.execute).not.toHaveBeenCalled();
   });
 
-  it('GET /links should reject requests with an invalid bearer token', async () => {
+  it('POST /links should reject requests with an invalid bearer token', async () => {
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
     );
@@ -154,10 +136,13 @@ describe('Links List (e2e)', () => {
     );
 
     const response = await app.inject({
-      method: 'GET',
+      method: 'POST',
       url: '/links',
       headers: {
         authorization: 'Bearer invalid-token',
+      },
+      payload: {
+        originalUrl: 'https://example.com/articles/clean-architecture',
       },
     });
 
@@ -170,6 +155,6 @@ describe('Links List (e2e)', () => {
     expect(mocked.accessTokenVerifier.verify).toHaveBeenCalledWith(
       'invalid-token',
     );
-    expect(mocked.listOwnedLinksUseCase.execute).not.toHaveBeenCalled();
+    expect(mocked.createLinkUseCase.execute).not.toHaveBeenCalled();
   });
 });

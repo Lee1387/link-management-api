@@ -4,11 +4,11 @@ import {
   type AccessTokenVerifier,
   type VerifiedAccessTokenPayload,
 } from './../../../src/auth/application/ports/access-token-verifier';
-import { CreateLinkUseCase } from './../../../src/links/application/use-cases/create-link.use-case';
-import { DisableOwnedLinkUseCase } from './../../../src/links/application/use-cases/disable-owned-link.use-case';
-import { EnableOwnedLinkUseCase } from './../../../src/links/application/use-cases/enable-owned-link.use-case';
-import { GetOwnedLinkDetailsUseCase } from './../../../src/links/application/use-cases/get-owned-link-details.use-case';
-import { ListOwnedLinksUseCase } from './../../../src/links/application/use-cases/list-owned-links.use-case';
+import { CreateLinkUseCase } from './../../../src/links/application/use-cases/mutation/create-link.use-case';
+import { DisableOwnedLinkUseCase } from './../../../src/links/application/use-cases/lifecycle/disable-owned-link.use-case';
+import { EnableOwnedLinkUseCase } from './../../../src/links/application/use-cases/lifecycle/enable-owned-link.use-case';
+import { GetOwnedLinkDetailsUseCase } from './../../../src/links/application/use-cases/query/get-owned-link-details.use-case';
+import { ListOwnedLinksUseCase } from './../../../src/links/application/use-cases/query/list-owned-links.use-case';
 import { PrismaService } from './../../../src/prisma/prisma.service';
 import { createTestApp } from './../../support/create-test-app';
 

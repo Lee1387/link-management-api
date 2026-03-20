@@ -23,11 +23,11 @@ import {
 import { CurrentUser } from '../auth/http/current-user.decorator';
 import { JwtAuthGuard } from '../auth/http/jwt-auth.guard';
 import type { AuthenticatedRequestUser } from '../auth/http/authenticated-request-user';
-import { CreateLinkUseCase } from './application/use-cases/create-link.use-case';
-import { DisableOwnedLinkUseCase } from './application/use-cases/disable-owned-link.use-case';
-import { EnableOwnedLinkUseCase } from './application/use-cases/enable-owned-link.use-case';
-import { GetOwnedLinkDetailsUseCase } from './application/use-cases/get-owned-link-details.use-case';
-import { ListOwnedLinksUseCase } from './application/use-cases/list-owned-links.use-case';
+import { CreateLinkUseCase } from './application/use-cases/mutation/create-link.use-case';
+import { DisableOwnedLinkUseCase } from './application/use-cases/lifecycle/disable-owned-link.use-case';
+import { EnableOwnedLinkUseCase } from './application/use-cases/lifecycle/enable-owned-link.use-case';
+import { GetOwnedLinkDetailsUseCase } from './application/use-cases/query/get-owned-link-details.use-case';
+import { ListOwnedLinksUseCase } from './application/use-cases/query/list-owned-links.use-case';
 import { CreateLinkDto } from './dto/create-link.dto';
 import { LinkResponseDto, toLinkResponseDto } from './dto/link-response.dto';
 import {

@@ -13,7 +13,7 @@ import {
   ApiParam,
   ApiTags,
 } from '@nestjs/swagger';
-import { ResolveLinkUseCase } from './application/use-cases/resolve-link.use-case';
+import { ResolveLinkUseCase } from './application/use-cases/public/resolve-link.use-case';
 
 @ApiTags('redirects')
 @Controller()

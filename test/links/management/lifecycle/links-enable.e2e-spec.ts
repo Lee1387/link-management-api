@@ -1,17 +1,17 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
-import { InvalidAccessTokenError } from './../../../src/auth/domain/auth-user.errors';
+import { InvalidAccessTokenError } from './../../../../src/auth/domain/auth-user.errors';
 import {
   createMockedLinksApp,
   createMockedLinksPrismaQueryExecutor,
   TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
-} from '../support/create-mocked-links-app';
+} from './../../support/create-mocked-links-app';
 import {
   applyTestEnvironment,
   captureTestEnvironment,
   restoreTestEnvironment,
-} from './../../support/test-environment';
+} from './../../../support/test-environment';
 
-describe('Links Disable (e2e)', () => {
+describe('Links Enable (e2e)', () => {
   const environmentSnapshot = captureTestEnvironment();
   let app: NestFastifyApplication | null = null;
 
@@ -28,7 +28,7 @@ describe('Links Disable (e2e)', () => {
     restoreTestEnvironment(environmentSnapshot);
   });
 
-  it('PATCH /links/:id/disable should disable the authenticated user owned link', async () => {
+  it('PATCH /links/:id/enable should enable the authenticated user owned link', async () => {
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
     );
@@ -36,18 +36,18 @@ describe('Links Disable (e2e)', () => {
     mocked.accessTokenVerifier.verify.mockResolvedValue(
       TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
     );
-    mocked.disableOwnedLinkUseCase.execute.mockResolvedValue({
+    mocked.enableOwnedLinkUseCase.execute.mockResolvedValue({
       id: 'link_123',
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123X',
-      disabledAt: new Date('2026-03-20T10:00:00.000Z'),
+      disabledAt: null,
       createdAt: new Date('2026-03-18T13:10:00.000Z'),
       updatedAt: new Date('2026-03-20T10:00:00.000Z'),
     });
 
     const response = await app.inject({
       method: 'PATCH',
-      url: '/links/link_123/disable',
+      url: '/links/link_123/enable',
       headers: {
         authorization: 'Bearer signed-jwt-token',
       },
@@ -58,17 +58,17 @@ describe('Links Disable (e2e)', () => {
       id: 'link_123',
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123X',
-      disabledAt: '2026-03-20T10:00:00.000Z',
+      disabledAt: null,
       createdAt: '2026-03-18T13:10:00.000Z',
       updatedAt: '2026-03-20T10:00:00.000Z',
     });
-    expect(mocked.disableOwnedLinkUseCase.execute).toHaveBeenCalledWith(
+    expect(mocked.enableOwnedLinkUseCase.execute).toHaveBeenCalledWith(
       'link_123',
       'user_123',
     );
   });
 
-  it('PATCH /links/:id/disable should return not found when the owned link does not exist', async () => {
+  it('PATCH /links/:id/enable should return not found when the owned link does not exist', async () => {
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
     );
@@ -76,11 +76,11 @@ describe('Links Disable (e2e)', () => {
     mocked.accessTokenVerifier.verify.mockResolvedValue(
       TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
     );
-    mocked.disableOwnedLinkUseCase.execute.mockResolvedValue(null);
+    mocked.enableOwnedLinkUseCase.execute.mockResolvedValue(null);
 
     const response = await app.inject({
       method: 'PATCH',
-      url: '/links/missing/disable',
+      url: '/links/missing/enable',
       headers: {
         authorization: 'Bearer signed-jwt-token',
       },
@@ -92,13 +92,13 @@ describe('Links Disable (e2e)', () => {
       error: 'Not Found',
       statusCode: 404,
     });
-    expect(mocked.disableOwnedLinkUseCase.execute).toHaveBeenCalledWith(
+    expect(mocked.enableOwnedLinkUseCase.execute).toHaveBeenCalledWith(
       'missing',
       'user_123',
     );
   });
 
-  it('PATCH /links/:id/disable should reject requests without a bearer token', async () => {
+  it('PATCH /links/:id/enable should reject requests without a bearer token', async () => {
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
     );
@@ -106,7 +106,7 @@ describe('Links Disable (e2e)', () => {
 
     const response = await app.inject({
       method: 'PATCH',
-      url: '/links/link_123/disable',
+      url: '/links/link_123/enable',
     });
 
     expect(response.statusCode).toBe(401);
@@ -116,10 +116,10 @@ describe('Links Disable (e2e)', () => {
       statusCode: 401,
     });
     expect(mocked.accessTokenVerifier.verify).not.toHaveBeenCalled();
-    expect(mocked.disableOwnedLinkUseCase.execute).not.toHaveBeenCalled();
+    expect(mocked.enableOwnedLinkUseCase.execute).not.toHaveBeenCalled();
   });
 
-  it('PATCH /links/:id/disable should reject requests with an invalid bearer token', async () => {
+  it('PATCH /links/:id/enable should reject requests with an invalid bearer token', async () => {
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
     );
@@ -130,7 +130,7 @@ describe('Links Disable (e2e)', () => {
 
     const response = await app.inject({
       method: 'PATCH',
-      url: '/links/link_123/disable',
+      url: '/links/link_123/enable',
       headers: {
         authorization: 'Bearer invalid-token',
       },
@@ -145,6 +145,6 @@ describe('Links Disable (e2e)', () => {
     expect(mocked.accessTokenVerifier.verify).toHaveBeenCalledWith(
       'invalid-token',
     );
-    expect(mocked.disableOwnedLinkUseCase.execute).not.toHaveBeenCalled();
+    expect(mocked.enableOwnedLinkUseCase.execute).not.toHaveBeenCalled();
   });
 });

@@ -5,12 +5,12 @@ import {
   createOwnedLink,
   loginUser,
   registerUser,
-} from '../support/links-db-test-helpers';
+} from './../../support/links-db-test-helpers';
 import {
   applyTestEnvironment,
   captureTestEnvironment,
   restoreTestEnvironment,
-} from './../../support/test-environment';
+} from './../../../support/test-environment';
 
 describe('Links Details (db e2e)', () => {
   const environmentSnapshot = captureTestEnvironment();

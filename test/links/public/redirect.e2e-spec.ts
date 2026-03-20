@@ -1,6 +1,6 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { type TestingModuleBuilder } from '@nestjs/testing';
-import { ResolveLinkUseCase } from './../../../src/links/application/use-cases/resolve-link.use-case';
+import { ResolveLinkUseCase } from './../../../src/links/application/use-cases/public/resolve-link.use-case';
 import { PrismaService } from './../../../src/prisma/prisma.service';
 import { createTestApp } from './../../support/create-test-app';
 import {

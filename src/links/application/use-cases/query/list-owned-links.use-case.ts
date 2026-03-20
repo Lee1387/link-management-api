@@ -3,8 +3,8 @@ import {
   type FindOwnedLinksPageInput,
   LINK_REPOSITORY,
   type LinkRepository,
-} from '../../domain/link.repository';
-import type { Link } from '../../domain/link.entity';
+} from '../../../domain/link.repository';
+import type { Link } from '../../../domain/link.entity';
 
 @Injectable()
 export class ListOwnedLinksUseCase {

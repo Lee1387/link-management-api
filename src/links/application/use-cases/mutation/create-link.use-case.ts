@@ -2,16 +2,16 @@ import { Inject, Injectable } from '@nestjs/common';
 import {
   SHORT_CODE_GENERATOR,
   type ShortCodeGenerator,
-} from '../short-code-generator';
+} from '../../short-code-generator';
 import {
   DuplicateShortCodeError,
   ShortCodeGenerationFailedError,
-} from '../../domain/link.errors';
+} from '../../../domain/link.errors';
 import {
   LINK_REPOSITORY,
   type LinkRepository,
-} from '../../domain/link.repository';
-import type { Link } from '../../domain/link.entity';
+} from '../../../domain/link.repository';
+import type { Link } from '../../../domain/link.entity';
 
 export interface CreateLinkCommand {
   originalUrl: string;

@@ -1,5 +1,5 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
-import { PrismaService } from './../../../src/prisma/prisma.service';
+import { PrismaService } from './../../../../src/prisma/prisma.service';
 import {
   cleanupLinksDbState,
   createLinksDbApp,
@@ -8,12 +8,12 @@ import {
   enableOwnedLink,
   loginUser,
   registerUser,
-} from '../support/links-db-test-helpers';
+} from './../../support/links-db-test-helpers';
 import {
   applyTestEnvironment,
   captureTestEnvironment,
   restoreTestEnvironment,
-} from './../../support/test-environment';
+} from './../../../support/test-environment';
 
 describe('Links Enable (db e2e)', () => {
   const environmentSnapshot = captureTestEnvironment();
