@@ -13,6 +13,7 @@ describe('PrismaLinkRepository', () => {
           id: string;
           originalUrl: string;
           shortCode: string;
+          disabledAt: Date | null;
           createdAt: Date;
           updatedAt: Date;
         }>,
@@ -23,6 +24,7 @@ describe('PrismaLinkRepository', () => {
           id: string;
           originalUrl: string;
           shortCode: string;
+          disabledAt: Date | null;
           createdAt: Date;
           updatedAt: Date;
         } | null>,
@@ -33,6 +35,7 @@ describe('PrismaLinkRepository', () => {
           id: string;
           originalUrl: string;
           shortCode: string;
+          disabledAt: Date | null;
           createdAt: Date;
           updatedAt: Date;
         } | null>,
@@ -44,11 +47,23 @@ describe('PrismaLinkRepository', () => {
             id: string;
             originalUrl: string;
             shortCode: string;
+            disabledAt: Date | null;
             createdAt: Date;
             updatedAt: Date;
           }>
         >,
         [{ where: { userId: string }; orderBy: { createdAt: 'desc' } }]
+      >;
+      update: jest.Mock<
+        Promise<{
+          id: string;
+          originalUrl: string;
+          shortCode: string;
+          disabledAt: Date | null;
+          createdAt: Date;
+          updatedAt: Date;
+        }>,
+        [{ where: { id: string }; data: { disabledAt: Date } }]
       >;
     };
   };
@@ -61,6 +76,7 @@ describe('PrismaLinkRepository', () => {
             id: string;
             originalUrl: string;
             shortCode: string;
+            disabledAt: Date | null;
             createdAt: Date;
             updatedAt: Date;
           }>,
@@ -71,6 +87,7 @@ describe('PrismaLinkRepository', () => {
             id: string;
             originalUrl: string;
             shortCode: string;
+            disabledAt: Date | null;
             createdAt: Date;
             updatedAt: Date;
           } | null>,
@@ -81,6 +98,7 @@ describe('PrismaLinkRepository', () => {
             id: string;
             originalUrl: string;
             shortCode: string;
+            disabledAt: Date | null;
             createdAt: Date;
             updatedAt: Date;
           } | null>,
@@ -92,11 +110,23 @@ describe('PrismaLinkRepository', () => {
               id: string;
               originalUrl: string;
               shortCode: string;
+              disabledAt: Date | null;
               createdAt: Date;
               updatedAt: Date;
             }>
           >,
           [{ where: { userId: string }; orderBy: { createdAt: 'desc' } }]
+        >(),
+        update: jest.fn<
+          Promise<{
+            id: string;
+            originalUrl: string;
+            shortCode: string;
+            disabledAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
+          }>,
+          [{ where: { id: string }; data: { disabledAt: Date } }]
         >(),
       },
     };
@@ -125,6 +155,7 @@ describe('PrismaLinkRepository', () => {
       id: 'link_123',
       originalUrl: input.originalUrl,
       shortCode: input.shortCode,
+      disabledAt: null,
       createdAt: new Date('2026-03-18T13:10:00.000Z'),
       updatedAt: new Date('2026-03-18T13:10:00.000Z'),
     };
@@ -159,6 +190,7 @@ describe('PrismaLinkRepository', () => {
       id: 'link_123',
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123X',
+      disabledAt: null,
       createdAt: new Date('2026-03-18T13:10:00.000Z'),
       updatedAt: new Date('2026-03-18T13:10:00.000Z'),
     };
@@ -193,6 +225,7 @@ describe('PrismaLinkRepository', () => {
         id: 'link_456',
         originalUrl: 'https://example.com/articles/testing',
         shortCode: 'new456X',
+        disabledAt: null,
         createdAt: new Date('2026-03-19T10:00:00.000Z'),
         updatedAt: new Date('2026-03-19T10:00:00.000Z'),
       },
@@ -200,6 +233,7 @@ describe('PrismaLinkRepository', () => {
         id: 'link_123',
         originalUrl: 'https://example.com/articles/clean-architecture',
         shortCode: 'abc123X',
+        disabledAt: null,
         createdAt: new Date('2026-03-18T13:10:00.000Z'),
         updatedAt: new Date('2026-03-18T13:10:00.000Z'),
       },
@@ -224,6 +258,7 @@ describe('PrismaLinkRepository', () => {
       id: 'link_123',
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123X',
+      disabledAt: null,
       createdAt: new Date('2026-03-18T13:10:00.000Z'),
       updatedAt: new Date('2026-03-18T13:10:00.000Z'),
     };
@@ -252,5 +287,80 @@ describe('PrismaLinkRepository', () => {
         userId: 'user_123',
       },
     });
+  });
+
+  it('should disable an owned active link', async () => {
+    const disabledAt = new Date('2026-03-19T20:00:00.000Z');
+    const prismaLink = {
+      id: 'link_123',
+      originalUrl: 'https://example.com/articles/clean-architecture',
+      shortCode: 'abc123X',
+      disabledAt: null,
+      createdAt: new Date('2026-03-18T13:10:00.000Z'),
+      updatedAt: new Date('2026-03-18T13:10:00.000Z'),
+    };
+    const updatedPrismaLink = {
+      ...prismaLink,
+      disabledAt,
+      updatedAt: new Date('2026-03-19T20:00:00.000Z'),
+    };
+    prismaService.link.findFirst.mockResolvedValue(prismaLink);
+    prismaService.link.update.mockResolvedValue(updatedPrismaLink);
+
+    await expect(
+      prismaLinkRepository.disableByIdAndUserId(
+        'link_123',
+        'user_123',
+        disabledAt,
+      ),
+    ).resolves.toEqual(updatedPrismaLink);
+    expect(prismaService.link.findFirst).toHaveBeenCalledWith({
+      where: {
+        id: 'link_123',
+        userId: 'user_123',
+      },
+    });
+    expect(prismaService.link.update).toHaveBeenCalledWith({
+      where: {
+        id: 'link_123',
+      },
+      data: {
+        disabledAt,
+      },
+    });
+  });
+
+  it('should return null when disabling an owned link that does not exist', async () => {
+    prismaService.link.findFirst.mockResolvedValue(null);
+
+    await expect(
+      prismaLinkRepository.disableByIdAndUserId(
+        'missing',
+        'user_123',
+        new Date('2026-03-19T20:00:00.000Z'),
+      ),
+    ).resolves.toBeNull();
+    expect(prismaService.link.update).not.toHaveBeenCalled();
+  });
+
+  it('should not update a link that is already disabled', async () => {
+    const prismaLink = {
+      id: 'link_123',
+      originalUrl: 'https://example.com/articles/clean-architecture',
+      shortCode: 'abc123X',
+      disabledAt: new Date('2026-03-19T19:00:00.000Z'),
+      createdAt: new Date('2026-03-18T13:10:00.000Z'),
+      updatedAt: new Date('2026-03-19T19:00:00.000Z'),
+    };
+    prismaService.link.findFirst.mockResolvedValue(prismaLink);
+
+    await expect(
+      prismaLinkRepository.disableByIdAndUserId(
+        'link_123',
+        'user_123',
+        new Date('2026-03-19T20:00:00.000Z'),
+      ),
+    ).resolves.toEqual(prismaLink);
+    expect(prismaService.link.update).not.toHaveBeenCalled();
   });
 });

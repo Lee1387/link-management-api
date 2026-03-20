@@ -13,6 +13,7 @@ function toLinkEntity(prismaLink: PrismaLink): Link {
     id: prismaLink.id,
     originalUrl: prismaLink.originalUrl,
     shortCode: prismaLink.shortCode,
+    disabledAt: prismaLink.disabledAt,
     createdAt: prismaLink.createdAt,
     updatedAt: prismaLink.updatedAt,
   };
@@ -93,5 +94,37 @@ export class PrismaLinkRepository implements LinkRepository {
     }
 
     return toLinkEntity(prismaLink);
+  }
+
+  async disableByIdAndUserId(
+    id: string,
+    userId: string,
+    disabledAt: Date,
+  ): Promise<Link | null> {
+    const prismaLink = await this.prismaService.link.findFirst({
+      where: {
+        id,
+        userId,
+      },
+    });
+
+    if (prismaLink === null) {
+      return null;
+    }
+
+    if (prismaLink.disabledAt !== null) {
+      return toLinkEntity(prismaLink);
+    }
+
+    const updatedPrismaLink = await this.prismaService.link.update({
+      where: {
+        id,
+      },
+      data: {
+        disabledAt,
+      },
+    });
+
+    return toLinkEntity(updatedPrismaLink);
   }
 }
