@@ -1,15 +1,15 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
-import { InvalidAccessTokenError } from './../../src/auth/domain/auth-user.errors';
+import { InvalidAccessTokenError } from './../../../src/auth/domain/auth-user.errors';
 import {
   createMockedLinksApp,
   createMockedLinksPrismaQueryExecutor,
   TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
-} from './support/create-mocked-links-app';
+} from '../support/create-mocked-links-app';
 import {
   applyTestEnvironment,
   captureTestEnvironment,
   restoreTestEnvironment,
-} from './../support/test-environment';
+} from './../../support/test-environment';
 
 describe('Links List (e2e)', () => {
   const environmentSnapshot = captureTestEnvironment();

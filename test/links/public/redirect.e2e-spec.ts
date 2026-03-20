@@ -1,12 +1,13 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
-import { ResolveLinkUseCase } from './../../src/links/application/use-cases/resolve-link.use-case';
-import { PrismaService } from './../../src/prisma/prisma.service';
-import { createTestApp } from './../support/create-test-app';
+import { type TestingModuleBuilder } from '@nestjs/testing';
+import { ResolveLinkUseCase } from './../../../src/links/application/use-cases/resolve-link.use-case';
+import { PrismaService } from './../../../src/prisma/prisma.service';
+import { createTestApp } from './../../support/create-test-app';
 import {
   applyTestEnvironment,
   captureTestEnvironment,
   restoreTestEnvironment,
-} from './../support/test-environment';
+} from './../../support/test-environment';
 
 type PrismaQueryExecutor = {
   $queryRaw: jest.Mock<Promise<unknown>, [TemplateStringsArray, ...unknown[]]>;
@@ -42,7 +43,7 @@ describe('Redirect (e2e)', () => {
     restoreTestEnvironment(environmentSnapshot);
   });
 
-  async function createApp(
+  function createApp(
     prismaService: PrismaQueryExecutor,
   ): Promise<NestFastifyApplication> {
     resolveLinkUseCase = {
@@ -60,7 +61,7 @@ describe('Redirect (e2e)', () => {
     };
 
     return createTestApp({
-      configureBuilder: (builder) =>
+      configureBuilder: (builder: TestingModuleBuilder) =>
         builder
           .overrideProvider(PrismaService)
           .useValue(prismaService)

@@ -3,7 +3,7 @@ import { CreateLinkUseCase } from './create-link.use-case';
 import {
   SHORT_CODE_GENERATOR,
   type ShortCodeGenerator,
-} from '../ports/short-code-generator';
+} from '../short-code-generator';
 import {
   DuplicateShortCodeError,
   ShortCodeGenerationFailedError,

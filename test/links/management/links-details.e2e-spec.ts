@@ -3,12 +3,12 @@ import {
   createMockedLinksApp,
   createMockedLinksPrismaQueryExecutor,
   TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
-} from './support/create-mocked-links-app';
+} from '../support/create-mocked-links-app';
 import {
   applyTestEnvironment,
   captureTestEnvironment,
   restoreTestEnvironment,
-} from './../support/test-environment';
+} from './../../support/test-environment';
 
 describe('Links Details (e2e)', () => {
   const environmentSnapshot = captureTestEnvironment();

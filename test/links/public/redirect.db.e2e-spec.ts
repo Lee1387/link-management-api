@@ -1,11 +1,11 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
-import { PrismaService } from './../../src/prisma/prisma.service';
-import { createTestApp } from './../support/create-test-app';
+import { PrismaService } from './../../../src/prisma/prisma.service';
+import { createTestApp } from './../../support/create-test-app';
 import {
   applyTestEnvironment,
   captureTestEnvironment,
   restoreTestEnvironment,
-} from './../support/test-environment';
+} from './../../support/test-environment';
 
 describe('Redirect (db e2e)', () => {
   const environmentSnapshot = captureTestEnvironment();
@@ -53,7 +53,7 @@ describe('Redirect (db e2e)', () => {
     restoreTestEnvironment(environmentSnapshot);
   });
 
-  async function createApp(): Promise<NestFastifyApplication> {
+  function createApp(): Promise<NestFastifyApplication> {
     return createTestApp();
   }
 

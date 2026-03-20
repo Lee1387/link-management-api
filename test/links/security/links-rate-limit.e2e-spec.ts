@@ -2,17 +2,17 @@ import { type NestFastifyApplication } from '@nestjs/platform-fastify';
 import {
   TOO_MANY_REQUESTS_MESSAGE,
   WRITE_RATE_LIMIT,
-} from './../../src/rate-limit/rate-limit.policies';
+} from './../../../src/rate-limit/rate-limit.policies';
 import {
   createMockedLinksApp,
   createMockedLinksPrismaQueryExecutor,
   TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
-} from './support/create-mocked-links-app';
+} from '../support/create-mocked-links-app';
 import {
   applyTestEnvironment,
   captureTestEnvironment,
   restoreTestEnvironment,
-} from './../support/test-environment';
+} from './../../support/test-environment';
 
 describe('Links Rate Limit (e2e)', () => {
   const environmentSnapshot = captureTestEnvironment();
