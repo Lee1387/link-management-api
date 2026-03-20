@@ -12,6 +12,16 @@ export interface PrismaLinkRecord {
   readonly updatedAt: Date;
 }
 
+type DisableOwnedLinkUpdateManyArgs = {
+  where: { id: string; userId: string; disabledAt: null };
+  data: { disabledAt: Date };
+};
+
+type EnableOwnedLinkUpdateManyArgs = {
+  where: { id: string; userId: string; disabledAt: { not: null } };
+  data: { disabledAt: null };
+};
+
 export interface PrismaLinkRepositoryMock {
   readonly link: {
     readonly create: jest.Mock<
@@ -39,12 +49,7 @@ export interface PrismaLinkRepositoryMock {
     >;
     readonly updateMany: jest.Mock<
       Promise<{ count: number }>,
-      [
-        {
-          where: { id: string; userId: string; disabledAt: null };
-          data: { disabledAt: Date };
-        },
-      ]
+      [DisableOwnedLinkUpdateManyArgs | EnableOwnedLinkUpdateManyArgs]
     >;
   };
 }
@@ -79,12 +84,7 @@ export function createPrismaLinkRepositoryMock(): PrismaLinkRepositoryMock {
       >(),
       updateMany: jest.fn<
         Promise<{ count: number }>,
-        [
-          {
-            where: { id: string; userId: string; disabledAt: null };
-            data: { disabledAt: Date };
-          },
-        ]
+        [DisableOwnedLinkUpdateManyArgs | EnableOwnedLinkUpdateManyArgs]
       >(),
     },
   };

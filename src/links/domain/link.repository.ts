@@ -22,6 +22,7 @@ export interface LinkRepository {
     userId: string,
     disabledAt: Date,
   ): Promise<Link | null>;
+  enableByIdAndUserId(id: string, userId: string): Promise<Link | null>;
 }
 
 export const LINK_REPOSITORY = Symbol('LINK_REPOSITORY');
