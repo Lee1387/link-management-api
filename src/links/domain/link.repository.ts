@@ -23,6 +23,11 @@ export interface LinkRepository {
     disabledAt: Date,
   ): Promise<Link | null>;
   enableByIdAndUserId(id: string, userId: string): Promise<Link | null>;
+  expireByIdAndUserId(
+    id: string,
+    userId: string,
+    expiresAt: Date,
+  ): Promise<Link | null>;
 }
 
 export const LINK_REPOSITORY = Symbol('LINK_REPOSITORY');

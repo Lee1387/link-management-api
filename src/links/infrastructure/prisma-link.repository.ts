@@ -15,6 +15,7 @@ function toLinkEntity(prismaLink: PrismaLink): Link {
     originalUrl: prismaLink.originalUrl,
     shortCode: prismaLink.shortCode,
     disabledAt: prismaLink.disabledAt,
+    expiresAt: prismaLink.expiresAt,
     createdAt: prismaLink.createdAt,
     updatedAt: prismaLink.updatedAt,
   };
@@ -142,6 +143,35 @@ export class PrismaLinkRepository implements LinkRepository {
       },
       data: {
         disabledAt: null,
+      },
+    });
+
+    const prismaLink = await this.prismaService.link.findFirst({
+      where: {
+        id,
+        userId,
+      },
+    });
+
+    if (prismaLink === null) {
+      return null;
+    }
+
+    return toLinkEntity(prismaLink);
+  }
+
+  async expireByIdAndUserId(
+    id: string,
+    userId: string,
+    expiresAt: Date,
+  ): Promise<Link | null> {
+    await this.prismaService.link.updateMany({
+      where: {
+        id,
+        userId,
+      },
+      data: {
+        expiresAt,
       },
     });
 

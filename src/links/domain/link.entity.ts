@@ -3,6 +3,7 @@ export interface Link {
   readonly originalUrl: string;
   readonly shortCode: string;
   readonly disabledAt: Date | null;
+  readonly expiresAt: Date | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }

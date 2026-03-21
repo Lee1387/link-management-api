@@ -8,6 +8,7 @@ export interface PrismaLinkRecord {
   readonly originalUrl: string;
   readonly shortCode: string;
   readonly disabledAt: Date | null;
+  readonly expiresAt: Date | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -20,6 +21,11 @@ type DisableOwnedLinkUpdateManyArgs = {
 type EnableOwnedLinkUpdateManyArgs = {
   where: { id: string; userId: string; disabledAt: { not: null } };
   data: { disabledAt: null };
+};
+
+type ExpireOwnedLinkUpdateManyArgs = {
+  where: { id: string; userId: string };
+  data: { expiresAt: Date };
 };
 
 export interface PrismaLinkRepositoryMock {
@@ -49,7 +55,11 @@ export interface PrismaLinkRepositoryMock {
     >;
     readonly updateMany: jest.Mock<
       Promise<{ count: number }>,
-      [DisableOwnedLinkUpdateManyArgs | EnableOwnedLinkUpdateManyArgs]
+      [
+        | DisableOwnedLinkUpdateManyArgs
+        | EnableOwnedLinkUpdateManyArgs
+        | ExpireOwnedLinkUpdateManyArgs,
+      ]
     >;
   };
 }
@@ -84,7 +94,11 @@ export function createPrismaLinkRepositoryMock(): PrismaLinkRepositoryMock {
       >(),
       updateMany: jest.fn<
         Promise<{ count: number }>,
-        [DisableOwnedLinkUpdateManyArgs | EnableOwnedLinkUpdateManyArgs]
+        [
+          | DisableOwnedLinkUpdateManyArgs
+          | EnableOwnedLinkUpdateManyArgs
+          | ExpireOwnedLinkUpdateManyArgs,
+        ]
       >(),
     },
   };
