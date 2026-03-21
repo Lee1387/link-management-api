@@ -11,7 +11,7 @@ import {
   restoreTestEnvironment,
 } from './../../../support/test-environment';
 
-describe('Links Create (e2e)', () => {
+describe('Links Expire (e2e)', () => {
   const environmentSnapshot = captureTestEnvironment();
   let app: NestFastifyApplication | null = null;
 
@@ -28,7 +28,7 @@ describe('Links Create (e2e)', () => {
     restoreTestEnvironment(environmentSnapshot);
   });
 
-  it('POST /links should create a short link', async () => {
+  it('PATCH /links/:id/expire should update the authenticated user owned link expiry', async () => {
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
     );
@@ -36,45 +36,45 @@ describe('Links Create (e2e)', () => {
     mocked.accessTokenVerifier.verify.mockResolvedValue(
       TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
     );
-    mocked.createLinkUseCase.execute.mockResolvedValue({
+    mocked.expireOwnedLinkUseCase.execute.mockResolvedValue({
       id: 'link_123',
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123X',
       disabledAt: null,
-      expiresAt: null,
+      expiresAt: new Date('2026-04-01T12:00:00.000Z'),
       createdAt: new Date('2026-03-18T13:10:00.000Z'),
-      updatedAt: new Date('2026-03-18T13:10:00.000Z'),
+      updatedAt: new Date('2026-03-21T18:30:00.000Z'),
     });
 
     const response = await app.inject({
-      method: 'POST',
-      url: '/links',
+      method: 'PATCH',
+      url: '/links/link_123/expire',
       headers: {
         authorization: 'Bearer signed-jwt-token',
       },
       payload: {
-        originalUrl: 'https://example.com/articles/clean-architecture',
+        expiresAt: '2026-04-01T12:00:00.000Z',
       },
     });
 
-    expect(response.statusCode).toBe(201);
+    expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual({
       id: 'link_123',
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123X',
+      disabledAt: null,
+      expiresAt: '2026-04-01T12:00:00.000Z',
       createdAt: '2026-03-18T13:10:00.000Z',
-      updatedAt: '2026-03-18T13:10:00.000Z',
+      updatedAt: '2026-03-21T18:30:00.000Z',
     });
-    expect(mocked.createLinkUseCase.execute).toHaveBeenCalledWith({
-      originalUrl: 'https://example.com/articles/clean-architecture',
-      userId: 'user_123',
-    });
-    expect(mocked.accessTokenVerifier.verify).toHaveBeenCalledWith(
-      'signed-jwt-token',
+    expect(mocked.expireOwnedLinkUseCase.execute).toHaveBeenCalledWith(
+      'link_123',
+      'user_123',
+      new Date('2026-04-01T12:00:00.000Z'),
     );
   });
 
-  it('POST /links should reject invalid request bodies', async () => {
+  it('PATCH /links/:id/expire should reject invalid request bodies', async () => {
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
     );
@@ -84,36 +84,70 @@ describe('Links Create (e2e)', () => {
     );
 
     const response = await app.inject({
-      method: 'POST',
-      url: '/links',
+      method: 'PATCH',
+      url: '/links/link_123/expire',
       headers: {
         authorization: 'Bearer signed-jwt-token',
       },
       payload: {
-        originalUrl: 'not-a-url',
+        expiresAt: 'not-a-timestamp',
       },
     });
 
     expect(response.statusCode).toBe(400);
     expect(response.json()).toEqual({
       statusCode: 400,
-      message: ['originalUrl must be a URL address'],
+      message: ['expiresAt must be a valid ISO 8601 date string'],
       error: 'Bad Request',
     });
-    expect(mocked.createLinkUseCase.execute).not.toHaveBeenCalled();
+    expect(mocked.expireOwnedLinkUseCase.execute).not.toHaveBeenCalled();
   });
 
-  it('POST /links should reject requests without a bearer token', async () => {
+  it('PATCH /links/:id/expire should return not found when the owned link does not exist', async () => {
+    const mocked = await createMockedLinksApp(
+      createMockedLinksPrismaQueryExecutor(),
+    );
+    app = mocked.app;
+    mocked.accessTokenVerifier.verify.mockResolvedValue(
+      TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
+    );
+    mocked.expireOwnedLinkUseCase.execute.mockResolvedValue(null);
+
+    const response = await app.inject({
+      method: 'PATCH',
+      url: '/links/missing/expire',
+      headers: {
+        authorization: 'Bearer signed-jwt-token',
+      },
+      payload: {
+        expiresAt: '2026-04-01T12:00:00.000Z',
+      },
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      message: 'Link not found.',
+      error: 'Not Found',
+      statusCode: 404,
+    });
+    expect(mocked.expireOwnedLinkUseCase.execute).toHaveBeenCalledWith(
+      'missing',
+      'user_123',
+      new Date('2026-04-01T12:00:00.000Z'),
+    );
+  });
+
+  it('PATCH /links/:id/expire should reject requests without a bearer token', async () => {
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
     );
     app = mocked.app;
 
     const response = await app.inject({
-      method: 'POST',
-      url: '/links',
+      method: 'PATCH',
+      url: '/links/link_123/expire',
       payload: {
-        originalUrl: 'https://example.com/articles/clean-architecture',
+        expiresAt: '2026-04-01T12:00:00.000Z',
       },
     });
 
@@ -124,10 +158,10 @@ describe('Links Create (e2e)', () => {
       statusCode: 401,
     });
     expect(mocked.accessTokenVerifier.verify).not.toHaveBeenCalled();
-    expect(mocked.createLinkUseCase.execute).not.toHaveBeenCalled();
+    expect(mocked.expireOwnedLinkUseCase.execute).not.toHaveBeenCalled();
   });
 
-  it('POST /links should reject requests with an invalid bearer token', async () => {
+  it('PATCH /links/:id/expire should reject requests with an invalid bearer token', async () => {
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
     );
@@ -137,13 +171,13 @@ describe('Links Create (e2e)', () => {
     );
 
     const response = await app.inject({
-      method: 'POST',
-      url: '/links',
+      method: 'PATCH',
+      url: '/links/link_123/expire',
       headers: {
         authorization: 'Bearer invalid-token',
       },
       payload: {
-        originalUrl: 'https://example.com/articles/clean-architecture',
+        expiresAt: '2026-04-01T12:00:00.000Z',
       },
     });
 
@@ -156,6 +190,6 @@ describe('Links Create (e2e)', () => {
     expect(mocked.accessTokenVerifier.verify).toHaveBeenCalledWith(
       'invalid-token',
     );
-    expect(mocked.createLinkUseCase.execute).not.toHaveBeenCalled();
+    expect(mocked.expireOwnedLinkUseCase.execute).not.toHaveBeenCalled();
   });
 });

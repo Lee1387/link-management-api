@@ -21,8 +21,9 @@ export interface CreatedLinkBody {
   readonly updatedAt: string;
 }
 
-export interface DisabledOwnedLinkBody extends CreatedLinkBody {
+export interface ManagedOwnedLinkBody extends CreatedLinkBody {
   readonly disabledAt: string | null;
+  readonly expiresAt: string | null;
 }
 
 export function createLinksDbApp(): Promise<NestFastifyApplication> {
@@ -136,7 +137,7 @@ export async function disableOwnedLink(
   app: NestFastifyApplication,
   accessToken: string,
   id: string,
-): Promise<DisabledOwnedLinkBody> {
+): Promise<ManagedOwnedLinkBody> {
   const response = await app.inject({
     method: 'PATCH',
     url: `/links/${id}/disable`,
@@ -158,7 +159,7 @@ export async function enableOwnedLink(
   app: NestFastifyApplication,
   accessToken: string,
   id: string,
-): Promise<DisabledOwnedLinkBody> {
+): Promise<ManagedOwnedLinkBody> {
   const response = await app.inject({
     method: 'PATCH',
     url: `/links/${id}/enable`,
@@ -170,6 +171,32 @@ export async function enableOwnedLink(
   if (response.statusCode !== 200) {
     throw new Error(
       `Expected link enable to return 200, received ${response.statusCode}.`,
+    );
+  }
+
+  return response.json();
+}
+
+export async function expireOwnedLink(
+  app: NestFastifyApplication,
+  accessToken: string,
+  id: string,
+  expiresAt: string,
+): Promise<ManagedOwnedLinkBody> {
+  const response = await app.inject({
+    method: 'PATCH',
+    url: `/links/${id}/expire`,
+    headers: {
+      authorization: `Bearer ${accessToken}`,
+    },
+    payload: {
+      expiresAt,
+    },
+  });
+
+  if (response.statusCode !== 200) {
+    throw new Error(
+      `Expected link expiry update to return 200, received ${response.statusCode}.`,
     );
   }
 

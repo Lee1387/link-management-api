@@ -41,6 +41,7 @@ describe('Links Disable (e2e)', () => {
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123X',
       disabledAt: new Date('2026-03-20T10:00:00.000Z'),
+      expiresAt: null,
       createdAt: new Date('2026-03-18T13:10:00.000Z'),
       updatedAt: new Date('2026-03-20T10:00:00.000Z'),
     });
@@ -59,6 +60,7 @@ describe('Links Disable (e2e)', () => {
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123X',
       disabledAt: '2026-03-20T10:00:00.000Z',
+      expiresAt: null,
       createdAt: '2026-03-18T13:10:00.000Z',
       updatedAt: '2026-03-20T10:00:00.000Z',
     });

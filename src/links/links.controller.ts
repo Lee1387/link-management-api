@@ -26,9 +26,11 @@ import type { AuthenticatedRequestUser } from '../auth/http/authenticated-reques
 import { CreateLinkUseCase } from './application/use-cases/mutation/create-link.use-case';
 import { DisableOwnedLinkUseCase } from './application/use-cases/lifecycle/disable-owned-link.use-case';
 import { EnableOwnedLinkUseCase } from './application/use-cases/lifecycle/enable-owned-link.use-case';
+import { ExpireOwnedLinkUseCase } from './application/use-cases/lifecycle/expire-owned-link.use-case';
 import { GetOwnedLinkDetailsUseCase } from './application/use-cases/query/get-owned-link-details.use-case';
 import { ListOwnedLinksUseCase } from './application/use-cases/query/list-owned-links.use-case';
 import { CreateLinkDto } from './dto/create-link.dto';
+import { ExpireOwnedLinkDto } from './dto/expire-owned-link.dto';
 import { LinkResponseDto, toLinkResponseDto } from './dto/link-response.dto';
 import {
   OwnedLinkDetailsResponseDto,
@@ -54,6 +56,7 @@ export class LinksController {
     private readonly createLinkUseCase: CreateLinkUseCase,
     private readonly disableOwnedLinkUseCase: DisableOwnedLinkUseCase,
     private readonly enableOwnedLinkUseCase: EnableOwnedLinkUseCase,
+    private readonly expireOwnedLinkUseCase: ExpireOwnedLinkUseCase,
     private readonly getOwnedLinkDetailsUseCase: GetOwnedLinkDetailsUseCase,
     private readonly listOwnedLinksUseCase: ListOwnedLinksUseCase,
   ) {}
@@ -185,6 +188,51 @@ export class LinksController {
     @Param('id') id: string,
   ): Promise<OwnedLinkDetailsResponseDto> {
     const link = await this.enableOwnedLinkUseCase.execute(id, user.id);
+
+    if (link === null) {
+      throw new NotFoundException('Link not found.');
+    }
+
+    return toOwnedLinkDetailsResponseDto(link);
+  }
+
+  @Patch(':id/expire')
+  @ApiOperation({
+    summary: 'Expire an authenticated user link',
+    description:
+      'Sets the expiry time for a shortened link owned by the authenticated user.',
+  })
+  @ApiParam({
+    name: 'id',
+    description: 'The unique identifier of the owned link to expire.',
+    example: 'cm8f4b2zy0000s6m8x2v0q3lp',
+  })
+  @ApiOkResponse({
+    description: 'The owned link expiry was updated successfully.',
+    type: OwnedLinkDetailsResponseDto,
+  })
+  @ApiBadRequestResponse({
+    description: 'The request body failed validation.',
+  })
+  @ApiNotFoundResponse({
+    description: 'The requested owned link does not exist.',
+  })
+  @ApiUnauthorizedResponse({
+    description: 'A valid bearer token is required to expire an owned link.',
+  })
+  @SkipThrottle(SKIP_AUTH_RATE_LIMIT)
+  @Throttle(WRITE_RATE_LIMIT)
+  @UseGuards(ThrottlerGuard, JwtAuthGuard)
+  async expireOwned(
+    @CurrentUser() user: AuthenticatedRequestUser,
+    @Param('id') id: string,
+    @Body() body: ExpireOwnedLinkDto,
+  ): Promise<OwnedLinkDetailsResponseDto> {
+    const link = await this.expireOwnedLinkUseCase.execute(
+      id,
+      user.id,
+      new Date(body.expiresAt),
+    );
 
     if (link === null) {
       throw new NotFoundException('Link not found.');

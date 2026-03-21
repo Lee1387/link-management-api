@@ -56,6 +56,7 @@ describe('CreateLinkUseCase', () => {
       originalUrl: command.originalUrl,
       shortCode,
       disabledAt: null,
+      expiresAt: null,
       createdAt: new Date('2026-03-18T13:10:00.000Z'),
       updatedAt: new Date('2026-03-18T13:10:00.000Z'),
     };
@@ -84,6 +85,7 @@ describe('CreateLinkUseCase', () => {
       originalUrl: command.originalUrl,
       shortCode: 'fresh567',
       disabledAt: null,
+      expiresAt: null,
       createdAt: new Date('2026-03-18T13:10:00.000Z'),
       updatedAt: new Date('2026-03-18T13:10:00.000Z'),
     };

@@ -7,6 +7,7 @@ import {
 import { CreateLinkUseCase } from './../../../src/links/application/use-cases/mutation/create-link.use-case';
 import { DisableOwnedLinkUseCase } from './../../../src/links/application/use-cases/lifecycle/disable-owned-link.use-case';
 import { EnableOwnedLinkUseCase } from './../../../src/links/application/use-cases/lifecycle/enable-owned-link.use-case';
+import { ExpireOwnedLinkUseCase } from './../../../src/links/application/use-cases/lifecycle/expire-owned-link.use-case';
 import { GetOwnedLinkDetailsUseCase } from './../../../src/links/application/use-cases/query/get-owned-link-details.use-case';
 import { ListOwnedLinksUseCase } from './../../../src/links/application/use-cases/query/list-owned-links.use-case';
 import { PrismaService } from './../../../src/prisma/prisma.service';
@@ -17,6 +18,7 @@ export interface MockLinkResult {
   readonly originalUrl: string;
   readonly shortCode: string;
   readonly disabledAt: Date | null;
+  readonly expiresAt: Date | null;
   readonly createdAt: Date;
   readonly updatedAt: Date;
 }
@@ -61,6 +63,9 @@ export interface MockedLinksApp {
   readonly enableOwnedLinkUseCase: {
     execute: jest.Mock<Promise<MockLinkResult | null>, [string, string]>;
   };
+  readonly expireOwnedLinkUseCase: {
+    execute: jest.Mock<Promise<MockLinkResult | null>, [string, string, Date]>;
+  };
   readonly getOwnedLinkDetailsUseCase: {
     execute: jest.Mock<Promise<MockLinkResult | null>, [string, string]>;
   };
@@ -90,6 +95,9 @@ export async function createMockedLinksApp(
   const enableOwnedLinkUseCase = {
     execute: jest.fn<Promise<MockLinkResult | null>, [string, string]>(),
   };
+  const expireOwnedLinkUseCase = {
+    execute: jest.fn<Promise<MockLinkResult | null>, [string, string, Date]>(),
+  };
   const getOwnedLinkDetailsUseCase = {
     execute: jest.fn<Promise<MockLinkResult | null>, [string, string]>(),
   };
@@ -114,6 +122,8 @@ export async function createMockedLinksApp(
         .useValue(disableOwnedLinkUseCase)
         .overrideProvider(EnableOwnedLinkUseCase)
         .useValue(enableOwnedLinkUseCase)
+        .overrideProvider(ExpireOwnedLinkUseCase)
+        .useValue(expireOwnedLinkUseCase)
         .overrideProvider(GetOwnedLinkDetailsUseCase)
         .useValue(getOwnedLinkDetailsUseCase)
         .overrideProvider(ListOwnedLinksUseCase)
@@ -127,6 +137,7 @@ export async function createMockedLinksApp(
     createLinkUseCase,
     disableOwnedLinkUseCase,
     enableOwnedLinkUseCase,
+    expireOwnedLinkUseCase,
     getOwnedLinkDetailsUseCase,
     listOwnedLinksUseCase,
     accessTokenVerifier,
