@@ -11,12 +11,22 @@ export class OwnedLinkResponseDto extends LinkResponseDto {
     nullable: true,
   })
   disabledAt!: string | null;
+
+  @ApiProperty({
+    description:
+      'The timestamp when the link expires, or null when the link has no expiry.',
+    example: '2026-04-01T12:00:00.000Z',
+    format: 'date-time',
+    nullable: true,
+  })
+  expiresAt!: string | null;
 }
 
 export function toOwnedLinkResponseDto(link: Link): OwnedLinkResponseDto {
   return {
     ...toLinkResponseDto(link),
     disabledAt: link.disabledAt?.toISOString() ?? null,
+    expiresAt: link.expiresAt?.toISOString() ?? null,
   };
 }
 
