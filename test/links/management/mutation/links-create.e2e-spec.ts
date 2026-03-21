@@ -1,8 +1,10 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { InvalidAccessTokenError } from './../../../../src/auth/domain/auth-user.errors';
+import { CreateLinkUseCase } from './../../../../src/links/application/use-cases/mutation/create-link.use-case';
 import {
   createMockedLinksApp,
   createMockedLinksPrismaQueryExecutor,
+  type MockLinkResult,
   TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
 } from './../../support/create-mocked-links-app';
 import {
@@ -29,14 +31,22 @@ describe('Links Create (e2e)', () => {
   });
 
   it('POST /links should create a short link', async () => {
+    const createLinkUseCase = {
+      execute: jest.fn<
+        Promise<MockLinkResult>,
+        [{ originalUrl: string; userId: string }]
+      >(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder.overrideProvider(CreateLinkUseCase).useValue(createLinkUseCase),
     );
     app = mocked.app;
     mocked.accessTokenVerifier.verify.mockResolvedValue(
       TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
     );
-    mocked.createLinkUseCase.execute.mockResolvedValue({
+    createLinkUseCase.execute.mockResolvedValue({
       id: 'link_123',
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123X',
@@ -65,7 +75,7 @@ describe('Links Create (e2e)', () => {
       createdAt: '2026-03-18T13:10:00.000Z',
       updatedAt: '2026-03-18T13:10:00.000Z',
     });
-    expect(mocked.createLinkUseCase.execute).toHaveBeenCalledWith({
+    expect(createLinkUseCase.execute).toHaveBeenCalledWith({
       originalUrl: 'https://example.com/articles/clean-architecture',
       userId: 'user_123',
     });
@@ -75,8 +85,16 @@ describe('Links Create (e2e)', () => {
   });
 
   it('POST /links should reject invalid request bodies', async () => {
+    const createLinkUseCase = {
+      execute: jest.fn<
+        Promise<MockLinkResult>,
+        [{ originalUrl: string; userId: string }]
+      >(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder.overrideProvider(CreateLinkUseCase).useValue(createLinkUseCase),
     );
     app = mocked.app;
     mocked.accessTokenVerifier.verify.mockResolvedValue(
@@ -100,12 +118,20 @@ describe('Links Create (e2e)', () => {
       message: ['originalUrl must be a URL address'],
       error: 'Bad Request',
     });
-    expect(mocked.createLinkUseCase.execute).not.toHaveBeenCalled();
+    expect(createLinkUseCase.execute).not.toHaveBeenCalled();
   });
 
   it('POST /links should reject requests without a bearer token', async () => {
+    const createLinkUseCase = {
+      execute: jest.fn<
+        Promise<MockLinkResult>,
+        [{ originalUrl: string; userId: string }]
+      >(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder.overrideProvider(CreateLinkUseCase).useValue(createLinkUseCase),
     );
     app = mocked.app;
 
@@ -124,12 +150,20 @@ describe('Links Create (e2e)', () => {
       statusCode: 401,
     });
     expect(mocked.accessTokenVerifier.verify).not.toHaveBeenCalled();
-    expect(mocked.createLinkUseCase.execute).not.toHaveBeenCalled();
+    expect(createLinkUseCase.execute).not.toHaveBeenCalled();
   });
 
   it('POST /links should reject requests with an invalid bearer token', async () => {
+    const createLinkUseCase = {
+      execute: jest.fn<
+        Promise<MockLinkResult>,
+        [{ originalUrl: string; userId: string }]
+      >(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder.overrideProvider(CreateLinkUseCase).useValue(createLinkUseCase),
     );
     app = mocked.app;
     mocked.accessTokenVerifier.verify.mockRejectedValue(
@@ -156,6 +190,6 @@ describe('Links Create (e2e)', () => {
     expect(mocked.accessTokenVerifier.verify).toHaveBeenCalledWith(
       'invalid-token',
     );
-    expect(mocked.createLinkUseCase.execute).not.toHaveBeenCalled();
+    expect(createLinkUseCase.execute).not.toHaveBeenCalled();
   });
 });

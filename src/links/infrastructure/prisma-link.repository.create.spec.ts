@@ -3,7 +3,7 @@ import { type CreateLinkInput } from '../domain/link.repository';
 import {
   createPrismaLinkRepositoryTestContext,
   type PrismaLinkRecord,
-} from './prisma-link.repository.spec-support';
+} from '../../../test/links/support/prisma-link-repository.spec-support';
 
 describe('PrismaLinkRepository create', () => {
   it('should persist and map the created link', async () => {

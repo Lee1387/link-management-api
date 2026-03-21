@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PrismaService } from '../../prisma/prisma.service';
-import { type CreateLinkInput } from '../domain/link.repository';
-import { PrismaLinkRepository } from './prisma-link.repository';
+import { PrismaService } from '../../../src/prisma/prisma.service';
+import { type CreateLinkInput } from '../../../src/links/domain/link.repository';
+import { PrismaLinkRepository } from '../../../src/links/infrastructure/prisma-link.repository';
 
 export interface PrismaLinkRecord {
   readonly id: string;

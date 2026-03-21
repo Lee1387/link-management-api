@@ -1,7 +1,9 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
+import { GetOwnedLinkDetailsUseCase } from './../../../../src/links/application/use-cases/query/get-owned-link-details.use-case';
 import {
   createMockedLinksApp,
   createMockedLinksPrismaQueryExecutor,
+  type MockLinkResult,
   TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
 } from './../../support/create-mocked-links-app';
 import {
@@ -28,14 +30,21 @@ describe('Links Details (e2e)', () => {
   });
 
   it('GET /links/:id should return the authenticated user owned link details', async () => {
+    const getOwnedLinkDetailsUseCase = {
+      execute: jest.fn<Promise<MockLinkResult | null>, [string, string]>(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder
+          .overrideProvider(GetOwnedLinkDetailsUseCase)
+          .useValue(getOwnedLinkDetailsUseCase),
     );
     app = mocked.app;
     mocked.accessTokenVerifier.verify.mockResolvedValue(
       TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
     );
-    mocked.getOwnedLinkDetailsUseCase.execute.mockResolvedValue({
+    getOwnedLinkDetailsUseCase.execute.mockResolvedValue({
       id: 'link_123',
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123X',
@@ -63,21 +72,28 @@ describe('Links Details (e2e)', () => {
       createdAt: '2026-03-18T13:10:00.000Z',
       updatedAt: '2026-03-18T13:10:00.000Z',
     });
-    expect(mocked.getOwnedLinkDetailsUseCase.execute).toHaveBeenCalledWith(
+    expect(getOwnedLinkDetailsUseCase.execute).toHaveBeenCalledWith(
       'link_123',
       'user_123',
     );
   });
 
   it('GET /links/:id should return not found when the owned link does not exist', async () => {
+    const getOwnedLinkDetailsUseCase = {
+      execute: jest.fn<Promise<MockLinkResult | null>, [string, string]>(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder
+          .overrideProvider(GetOwnedLinkDetailsUseCase)
+          .useValue(getOwnedLinkDetailsUseCase),
     );
     app = mocked.app;
     mocked.accessTokenVerifier.verify.mockResolvedValue(
       TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
     );
-    mocked.getOwnedLinkDetailsUseCase.execute.mockResolvedValue(null);
+    getOwnedLinkDetailsUseCase.execute.mockResolvedValue(null);
 
     const response = await app.inject({
       method: 'GET',
@@ -93,7 +109,7 @@ describe('Links Details (e2e)', () => {
       error: 'Not Found',
       statusCode: 404,
     });
-    expect(mocked.getOwnedLinkDetailsUseCase.execute).toHaveBeenCalledWith(
+    expect(getOwnedLinkDetailsUseCase.execute).toHaveBeenCalledWith(
       'missing',
       'user_123',
     );

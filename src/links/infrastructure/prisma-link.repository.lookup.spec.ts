@@ -2,7 +2,7 @@ import { type FindOwnedLinksPageInput } from '../domain/link.repository';
 import {
   createPrismaLinkRepositoryTestContext,
   type PrismaLinkRecord,
-} from './prisma-link.repository.spec-support';
+} from '../../../test/links/support/prisma-link-repository.spec-support';
 
 describe('PrismaLinkRepository lookup', () => {
   it('should resolve a link by short code', async () => {

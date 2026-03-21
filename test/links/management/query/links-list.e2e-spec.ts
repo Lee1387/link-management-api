@@ -1,8 +1,10 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { InvalidAccessTokenError } from './../../../../src/auth/domain/auth-user.errors';
+import { ListOwnedLinksUseCase } from './../../../../src/links/application/use-cases/query/list-owned-links.use-case';
 import {
   createMockedLinksApp,
   createMockedLinksPrismaQueryExecutor,
+  type MockLinkResult,
   TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
 } from './../../support/create-mocked-links-app';
 import {
@@ -29,14 +31,24 @@ describe('Links List (e2e)', () => {
   });
 
   it('GET /links should return the authenticated user owned links', async () => {
+    const listOwnedLinksUseCase = {
+      execute: jest.fn<
+        Promise<MockLinkResult[]>,
+        [string, { limit: number; offset: number }]
+      >(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder
+          .overrideProvider(ListOwnedLinksUseCase)
+          .useValue(listOwnedLinksUseCase),
     );
     app = mocked.app;
     mocked.accessTokenVerifier.verify.mockResolvedValue(
       TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
     );
-    mocked.listOwnedLinksUseCase.execute.mockResolvedValue([
+    listOwnedLinksUseCase.execute.mockResolvedValue([
       {
         id: 'link_456',
         originalUrl: 'https://example.com/articles/testing',
@@ -86,27 +98,34 @@ describe('Links List (e2e)', () => {
         updatedAt: '2026-03-18T13:10:00.000Z',
       },
     ]);
-    expect(mocked.listOwnedLinksUseCase.execute).toHaveBeenCalledWith(
-      'user_123',
-      {
-        limit: 25,
-        offset: 0,
-      },
-    );
+    expect(listOwnedLinksUseCase.execute).toHaveBeenCalledWith('user_123', {
+      limit: 25,
+      offset: 0,
+    });
     expect(mocked.accessTokenVerifier.verify).toHaveBeenCalledWith(
       'signed-jwt-token',
     );
   });
 
   it('GET /links should pass pagination query parameters through to the use case', async () => {
+    const listOwnedLinksUseCase = {
+      execute: jest.fn<
+        Promise<MockLinkResult[]>,
+        [string, { limit: number; offset: number }]
+      >(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder
+          .overrideProvider(ListOwnedLinksUseCase)
+          .useValue(listOwnedLinksUseCase),
     );
     app = mocked.app;
     mocked.accessTokenVerifier.verify.mockResolvedValue(
       TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
     );
-    mocked.listOwnedLinksUseCase.execute.mockResolvedValue([]);
+    listOwnedLinksUseCase.execute.mockResolvedValue([]);
 
     const response = await app.inject({
       method: 'GET',
@@ -118,18 +137,25 @@ describe('Links List (e2e)', () => {
 
     expect(response.statusCode).toBe(200);
     expect(response.json()).toEqual([]);
-    expect(mocked.listOwnedLinksUseCase.execute).toHaveBeenCalledWith(
-      'user_123',
-      {
-        limit: 10,
-        offset: 20,
-      },
-    );
+    expect(listOwnedLinksUseCase.execute).toHaveBeenCalledWith('user_123', {
+      limit: 10,
+      offset: 20,
+    });
   });
 
   it('GET /links should reject requests without a bearer token', async () => {
+    const listOwnedLinksUseCase = {
+      execute: jest.fn<
+        Promise<MockLinkResult[]>,
+        [string, { limit: number; offset: number }]
+      >(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder
+          .overrideProvider(ListOwnedLinksUseCase)
+          .useValue(listOwnedLinksUseCase),
     );
     app = mocked.app;
 
@@ -145,12 +171,22 @@ describe('Links List (e2e)', () => {
       statusCode: 401,
     });
     expect(mocked.accessTokenVerifier.verify).not.toHaveBeenCalled();
-    expect(mocked.listOwnedLinksUseCase.execute).not.toHaveBeenCalled();
+    expect(listOwnedLinksUseCase.execute).not.toHaveBeenCalled();
   });
 
   it('GET /links should reject requests with an invalid bearer token', async () => {
+    const listOwnedLinksUseCase = {
+      execute: jest.fn<
+        Promise<MockLinkResult[]>,
+        [string, { limit: number; offset: number }]
+      >(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder
+          .overrideProvider(ListOwnedLinksUseCase)
+          .useValue(listOwnedLinksUseCase),
     );
     app = mocked.app;
     mocked.accessTokenVerifier.verify.mockRejectedValue(
@@ -174,6 +210,6 @@ describe('Links List (e2e)', () => {
     expect(mocked.accessTokenVerifier.verify).toHaveBeenCalledWith(
       'invalid-token',
     );
-    expect(mocked.listOwnedLinksUseCase.execute).not.toHaveBeenCalled();
+    expect(listOwnedLinksUseCase.execute).not.toHaveBeenCalled();
   });
 });

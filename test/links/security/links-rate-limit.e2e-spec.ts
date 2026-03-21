@@ -1,4 +1,6 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
+import { CreateLinkUseCase } from './../../../src/links/application/use-cases/mutation/create-link.use-case';
+import { DisableOwnedLinkUseCase } from './../../../src/links/application/use-cases/lifecycle/disable-owned-link.use-case';
 import {
   TOO_MANY_REQUESTS_MESSAGE,
   WRITE_RATE_LIMIT,
@@ -6,6 +8,7 @@ import {
 import {
   createMockedLinksApp,
   createMockedLinksPrismaQueryExecutor,
+  type MockLinkResult,
   TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
 } from '../support/create-mocked-links-app';
 import {
@@ -32,14 +35,22 @@ describe('Links Rate Limit (e2e)', () => {
   });
 
   it('POST /links should rate limit repeated authenticated creation requests', async () => {
+    const createLinkUseCase = {
+      execute: jest.fn<
+        Promise<MockLinkResult>,
+        [{ originalUrl: string; userId: string }]
+      >(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder.overrideProvider(CreateLinkUseCase).useValue(createLinkUseCase),
     );
     app = mocked.app;
     mocked.accessTokenVerifier.verify.mockResolvedValue(
       TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
     );
-    mocked.createLinkUseCase.execute.mockResolvedValue({
+    createLinkUseCase.execute.mockResolvedValue({
       id: 'link_123',
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123X',
@@ -84,20 +95,27 @@ describe('Links Rate Limit (e2e)', () => {
       message: TOO_MANY_REQUESTS_MESSAGE,
       statusCode: 429,
     });
-    expect(mocked.createLinkUseCase.execute).toHaveBeenCalledTimes(
+    expect(createLinkUseCase.execute).toHaveBeenCalledTimes(
       WRITE_RATE_LIMIT.writeBurst.limit,
     );
   });
 
   it('PATCH /links/:id/disable should rate limit repeated authenticated disable requests', async () => {
+    const disableOwnedLinkUseCase = {
+      execute: jest.fn<Promise<MockLinkResult | null>, [string, string]>(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder
+          .overrideProvider(DisableOwnedLinkUseCase)
+          .useValue(disableOwnedLinkUseCase),
     );
     app = mocked.app;
     mocked.accessTokenVerifier.verify.mockResolvedValue(
       TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
     );
-    mocked.disableOwnedLinkUseCase.execute.mockResolvedValue({
+    disableOwnedLinkUseCase.execute.mockResolvedValue({
       id: 'link_123',
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123X',
@@ -136,7 +154,7 @@ describe('Links Rate Limit (e2e)', () => {
       message: TOO_MANY_REQUESTS_MESSAGE,
       statusCode: 429,
     });
-    expect(mocked.disableOwnedLinkUseCase.execute).toHaveBeenCalledTimes(
+    expect(disableOwnedLinkUseCase.execute).toHaveBeenCalledTimes(
       WRITE_RATE_LIMIT.writeBurst.limit,
     );
   });

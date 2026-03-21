@@ -3,6 +3,8 @@ import { PrismaService } from './../../../src/prisma/prisma.service';
 import { createTestApp } from './../../support/create-test-app';
 
 const DEFAULT_PASSWORD = 'my-secure-password';
+type InjectRequest = Parameters<NestFastifyApplication['inject']>[0];
+type InjectResponse = Awaited<ReturnType<NestFastifyApplication['inject']>>;
 
 export interface LoginResponseBody {
   readonly accessToken: string;
@@ -28,6 +30,45 @@ export interface ManagedOwnedLinkBody extends CreatedLinkBody {
 
 export function createLinksDbApp(): Promise<NestFastifyApplication> {
   return createTestApp();
+}
+
+function authorizationHeader(accessToken: string): { authorization: string } {
+  return {
+    authorization: `Bearer ${accessToken}`,
+  };
+}
+
+async function injectAndExpect(
+  app: NestFastifyApplication,
+  request: InjectRequest,
+  expectedStatusCode: number,
+  action: string,
+): Promise<InjectResponse> {
+  const response = await app.inject(request);
+
+  if (response.statusCode !== expectedStatusCode) {
+    throw new Error(
+      `Expected ${action} to return ${expectedStatusCode}, received ${response.statusCode}.`,
+    );
+  }
+
+  return response;
+}
+
+async function injectAndExpectJson<T>(
+  app: NestFastifyApplication,
+  request: InjectRequest,
+  expectedStatusCode: number,
+  action: string,
+): Promise<T> {
+  const response = await injectAndExpect(
+    app,
+    request,
+    expectedStatusCode,
+    action,
+  );
+
+  return response.json();
 }
 
 export async function cleanupLinksDbState(
@@ -69,20 +110,19 @@ export async function registerUser(
   email: string,
   password = DEFAULT_PASSWORD,
 ): Promise<void> {
-  const response = await app.inject({
-    method: 'POST',
-    url: '/auth/register',
-    payload: {
-      email,
-      password,
+  await injectAndExpect(
+    app,
+    {
+      method: 'POST',
+      url: '/auth/register',
+      payload: {
+        email,
+        password,
+      },
     },
-  });
-
-  if (response.statusCode !== 201) {
-    throw new Error(
-      `Expected register to return 201, received ${response.statusCode}.`,
-    );
-  }
+    201,
+    'register',
+  );
 }
 
 export async function loginUser(
@@ -90,22 +130,19 @@ export async function loginUser(
   email: string,
   password = DEFAULT_PASSWORD,
 ): Promise<LoginResponseBody> {
-  const response = await app.inject({
-    method: 'POST',
-    url: '/auth/login',
-    payload: {
-      email,
-      password,
+  return injectAndExpectJson<LoginResponseBody>(
+    app,
+    {
+      method: 'POST',
+      url: '/auth/login',
+      payload: {
+        email,
+        password,
+      },
     },
-  });
-
-  if (response.statusCode !== 200) {
-    throw new Error(
-      `Expected login to return 200, received ${response.statusCode}.`,
-    );
-  }
-
-  return response.json();
+    200,
+    'login',
+  );
 }
 
 export async function createOwnedLink(
@@ -113,24 +150,19 @@ export async function createOwnedLink(
   accessToken: string,
   originalUrl: string,
 ): Promise<CreatedLinkBody> {
-  const response = await app.inject({
-    method: 'POST',
-    url: '/links',
-    headers: {
-      authorization: `Bearer ${accessToken}`,
+  return injectAndExpectJson<CreatedLinkBody>(
+    app,
+    {
+      method: 'POST',
+      url: '/links',
+      headers: authorizationHeader(accessToken),
+      payload: {
+        originalUrl,
+      },
     },
-    payload: {
-      originalUrl,
-    },
-  });
-
-  if (response.statusCode !== 201) {
-    throw new Error(
-      `Expected link creation to return 201, received ${response.statusCode}.`,
-    );
-  }
-
-  return response.json();
+    201,
+    'link creation',
+  );
 }
 
 export async function disableOwnedLink(
@@ -138,21 +170,16 @@ export async function disableOwnedLink(
   accessToken: string,
   id: string,
 ): Promise<ManagedOwnedLinkBody> {
-  const response = await app.inject({
-    method: 'PATCH',
-    url: `/links/${id}/disable`,
-    headers: {
-      authorization: `Bearer ${accessToken}`,
+  return injectAndExpectJson<ManagedOwnedLinkBody>(
+    app,
+    {
+      method: 'PATCH',
+      url: `/links/${id}/disable`,
+      headers: authorizationHeader(accessToken),
     },
-  });
-
-  if (response.statusCode !== 200) {
-    throw new Error(
-      `Expected link disable to return 200, received ${response.statusCode}.`,
-    );
-  }
-
-  return response.json();
+    200,
+    'link disable',
+  );
 }
 
 export async function enableOwnedLink(
@@ -160,21 +187,16 @@ export async function enableOwnedLink(
   accessToken: string,
   id: string,
 ): Promise<ManagedOwnedLinkBody> {
-  const response = await app.inject({
-    method: 'PATCH',
-    url: `/links/${id}/enable`,
-    headers: {
-      authorization: `Bearer ${accessToken}`,
+  return injectAndExpectJson<ManagedOwnedLinkBody>(
+    app,
+    {
+      method: 'PATCH',
+      url: `/links/${id}/enable`,
+      headers: authorizationHeader(accessToken),
     },
-  });
-
-  if (response.statusCode !== 200) {
-    throw new Error(
-      `Expected link enable to return 200, received ${response.statusCode}.`,
-    );
-  }
-
-  return response.json();
+    200,
+    'link enable',
+  );
 }
 
 export async function expireOwnedLink(
@@ -183,22 +205,17 @@ export async function expireOwnedLink(
   id: string,
   expiresAt: string,
 ): Promise<ManagedOwnedLinkBody> {
-  const response = await app.inject({
-    method: 'PATCH',
-    url: `/links/${id}/expire`,
-    headers: {
-      authorization: `Bearer ${accessToken}`,
+  return injectAndExpectJson<ManagedOwnedLinkBody>(
+    app,
+    {
+      method: 'PATCH',
+      url: `/links/${id}/expire`,
+      headers: authorizationHeader(accessToken),
+      payload: {
+        expiresAt,
+      },
     },
-    payload: {
-      expiresAt,
-    },
-  });
-
-  if (response.statusCode !== 200) {
-    throw new Error(
-      `Expected link expiry update to return 200, received ${response.statusCode}.`,
-    );
-  }
-
-  return response.json();
+    200,
+    'link expiry update',
+  );
 }

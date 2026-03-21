@@ -1,8 +1,10 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
 import { InvalidAccessTokenError } from './../../../../src/auth/domain/auth-user.errors';
+import { EnableOwnedLinkUseCase } from './../../../../src/links/application/use-cases/lifecycle/enable-owned-link.use-case';
 import {
   createMockedLinksApp,
   createMockedLinksPrismaQueryExecutor,
+  type MockLinkResult,
   TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
 } from './../../support/create-mocked-links-app';
 import {
@@ -29,14 +31,21 @@ describe('Links Enable (e2e)', () => {
   });
 
   it('PATCH /links/:id/enable should enable the authenticated user owned link', async () => {
+    const enableOwnedLinkUseCase = {
+      execute: jest.fn<Promise<MockLinkResult | null>, [string, string]>(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder
+          .overrideProvider(EnableOwnedLinkUseCase)
+          .useValue(enableOwnedLinkUseCase),
     );
     app = mocked.app;
     mocked.accessTokenVerifier.verify.mockResolvedValue(
       TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
     );
-    mocked.enableOwnedLinkUseCase.execute.mockResolvedValue({
+    enableOwnedLinkUseCase.execute.mockResolvedValue({
       id: 'link_123',
       originalUrl: 'https://example.com/articles/clean-architecture',
       shortCode: 'abc123X',
@@ -64,21 +73,28 @@ describe('Links Enable (e2e)', () => {
       createdAt: '2026-03-18T13:10:00.000Z',
       updatedAt: '2026-03-20T10:00:00.000Z',
     });
-    expect(mocked.enableOwnedLinkUseCase.execute).toHaveBeenCalledWith(
+    expect(enableOwnedLinkUseCase.execute).toHaveBeenCalledWith(
       'link_123',
       'user_123',
     );
   });
 
   it('PATCH /links/:id/enable should return not found when the owned link does not exist', async () => {
+    const enableOwnedLinkUseCase = {
+      execute: jest.fn<Promise<MockLinkResult | null>, [string, string]>(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder
+          .overrideProvider(EnableOwnedLinkUseCase)
+          .useValue(enableOwnedLinkUseCase),
     );
     app = mocked.app;
     mocked.accessTokenVerifier.verify.mockResolvedValue(
       TEST_VERIFIED_ACCESS_TOKEN_PAYLOAD,
     );
-    mocked.enableOwnedLinkUseCase.execute.mockResolvedValue(null);
+    enableOwnedLinkUseCase.execute.mockResolvedValue(null);
 
     const response = await app.inject({
       method: 'PATCH',
@@ -94,15 +110,22 @@ describe('Links Enable (e2e)', () => {
       error: 'Not Found',
       statusCode: 404,
     });
-    expect(mocked.enableOwnedLinkUseCase.execute).toHaveBeenCalledWith(
+    expect(enableOwnedLinkUseCase.execute).toHaveBeenCalledWith(
       'missing',
       'user_123',
     );
   });
 
   it('PATCH /links/:id/enable should reject requests without a bearer token', async () => {
+    const enableOwnedLinkUseCase = {
+      execute: jest.fn<Promise<MockLinkResult | null>, [string, string]>(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder
+          .overrideProvider(EnableOwnedLinkUseCase)
+          .useValue(enableOwnedLinkUseCase),
     );
     app = mocked.app;
 
@@ -118,12 +141,19 @@ describe('Links Enable (e2e)', () => {
       statusCode: 401,
     });
     expect(mocked.accessTokenVerifier.verify).not.toHaveBeenCalled();
-    expect(mocked.enableOwnedLinkUseCase.execute).not.toHaveBeenCalled();
+    expect(enableOwnedLinkUseCase.execute).not.toHaveBeenCalled();
   });
 
   it('PATCH /links/:id/enable should reject requests with an invalid bearer token', async () => {
+    const enableOwnedLinkUseCase = {
+      execute: jest.fn<Promise<MockLinkResult | null>, [string, string]>(),
+    };
     const mocked = await createMockedLinksApp(
       createMockedLinksPrismaQueryExecutor(),
+      (builder) =>
+        builder
+          .overrideProvider(EnableOwnedLinkUseCase)
+          .useValue(enableOwnedLinkUseCase),
     );
     app = mocked.app;
     mocked.accessTokenVerifier.verify.mockRejectedValue(
@@ -147,6 +177,6 @@ describe('Links Enable (e2e)', () => {
     expect(mocked.accessTokenVerifier.verify).toHaveBeenCalledWith(
       'invalid-token',
     );
-    expect(mocked.enableOwnedLinkUseCase.execute).not.toHaveBeenCalled();
+    expect(enableOwnedLinkUseCase.execute).not.toHaveBeenCalled();
   });
 });

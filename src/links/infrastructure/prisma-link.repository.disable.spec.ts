@@ -1,7 +1,7 @@
 import {
   createPrismaLinkRepositoryTestContext,
   type PrismaLinkRecord,
-} from './prisma-link.repository.spec-support';
+} from '../../../test/links/support/prisma-link-repository.spec-support';
 
 describe('PrismaLinkRepository disable', () => {
   it('should disable an owned active link', async () => {

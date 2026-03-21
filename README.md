@@ -1,24 +1,10 @@
 # BranchlyAPI
 
-BranchlyAPI is the backend for Branchly, a private link management product for creating, managing, and controlling short links through authenticated ownership and public redirects.
+BranchlyAPI is the backend for Branchly, a private link management product. It handles user authentication, owned-link management, and public short-code redirects with lifecycle controls like disable, enable, and expiry.
 
-It is designed as a real product backend with clear module boundaries, pragmatic NestJS architecture, and production-minded defaults.
+## Why This Exists
 
-## Why BranchlyAPI Exists
-
-BranchlyAPI exists to support a focused Branchly product experience:
-
-- users can register and log in
-- users can create and manage their own short links
-- public visitors can resolve active short codes
-- link lifecycle controls like disablement, re-enablement, and expiry are enforced at the API level
-
-It is intentionally opinionated:
-
-- It is the backend for the Branchly product
-- It is not being shaped as a generic public developer platform
-- Production defaults are private-product oriented
-- Browser access is expected to come from the Branchly frontend
+BranchlyAPI is being built as the product backend for Branchly rather than as a generic public API platform. The goal is a backend that feels production-minded, maintainable, and ready to support a real frontend application.
 
 ## API Endpoints
 
@@ -27,7 +13,7 @@ It is intentionally opinionated:
 | `POST` | `/auth/register` | No | Create a user account |
 | `POST` | `/auth/login` | No | Authenticate and receive a bearer token |
 | `POST` | `/links` | Yes | Create a short link |
-| `GET` | `/links` | Yes | List owned links |
+| `GET` | `/links` | Yes | List owned links with `limit` and `offset` |
 | `GET` | `/links/:id` | Yes | Get owned link details |
 | `PATCH` | `/links/:id/disable` | Yes | Disable an owned link |
 | `PATCH` | `/links/:id/enable` | Yes | Re-enable an owned link |
@@ -35,24 +21,13 @@ It is intentionally opinionated:
 | `GET` | `/:shortCode` | No | Resolve a short code publicly |
 | `GET` | `/health` | No | Liveness check |
 
-Additional notes:
-
-- `GET /links` supports `limit` and `offset`
-- `GET /health/ready` is hidden in production
-- Swagger docs are available outside production at `/docs`
-
 ## Architecture
 
-BranchlyAPI uses a modular NestJS structure with clear boundaries between HTTP transport, application logic, and infrastructure:
+- `src/auth` handles registration, login, JWT issuance, verification, and request authentication.
+- `src/links` contains link creation, ownership-aware management flows, lifecycle controls, and public redirect resolution.
+- `src/config`, `src/prisma`, and `src/health` cover runtime configuration, database wiring, and operational endpoints.
 
-- `src/auth` handles registration, login, JWT issuance, JWT verification, and request authentication
-- `src/links` contains link creation, ownership-aware management flows, link lifecycle controls, expiry handling, and public redirect resolution
-- `src/health` provides liveness and non-production readiness checks
-- `src/config` owns environment validation and runtime configuration
-- `src/prisma` contains database integration and Prisma service wiring
-- `test` contains end-to-end and database-backed integration coverage
-
-Within each feature area, controllers stay thin, use cases own application behavior, and Prisma repositories isolate persistence details.
+Controllers stay thin, use cases own application behavior, and repositories isolate persistence details.
 
 ## Stack
 
@@ -66,20 +41,21 @@ Within each feature area, controllers stay thin, use cases own application behav
 
 ## Example Requests
 
-Register a user:
-
-```bash
-curl -X POST http://localhost:3000/auth/register \
-  -H "Content-Type: application/json" \
-  -d "{\"email\":\"alex@example.com\",\"password\":\"my-secure-password\"}"
-```
-
-Log in and receive an access token:
+Log in:
 
 ```bash
 curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
   -d "{\"email\":\"alex@example.com\",\"password\":\"my-secure-password\"}"
+```
+
+Create a short link:
+
+```bash
+curl -X POST http://localhost:3000/links \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d "{\"originalUrl\":\"https://example.com/articles/clean-architecture\"}"
 ```
 
 Example login response:
@@ -95,78 +71,23 @@ Example login response:
 }
 ```
 
-Create a short link:
-
-```bash
-curl -X POST http://localhost:3000/links \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d "{\"originalUrl\":\"https://example.com/articles/clean-architecture\"}"
-```
-
-List owned links:
-
-```bash
-curl "http://localhost:3000/links?limit=25&offset=0" \
-  -H "Authorization: Bearer <token>"
-```
-
-Disable a link:
-
-```bash
-curl -X PATCH http://localhost:3000/links/<linkId>/disable \
-  -H "Authorization: Bearer <token>"
-```
-
-Re-enable a link:
-
-```bash
-curl -X PATCH http://localhost:3000/links/<linkId>/enable \
-  -H "Authorization: Bearer <token>"
-```
-
-Set a link expiry:
-
-```bash
-curl -X PATCH http://localhost:3000/links/<linkId>/expire \
-  -H "Authorization: Bearer <token>" \
-  -H "Content-Type: application/json" \
-  -d "{\"expiresAt\":\"2026-04-01T12:00:00.000Z\"}"
-```
-
-Resolve a short code publicly:
-
-```bash
-curl -i http://localhost:3000/<shortCode>
-```
-
 ## Local Setup
 
-### 1. Install dependencies
+1. Install dependencies:
 
 ```bash
 pnpm install
 ```
 
-### 2. Configure environment
+2. Copy `.env.example` to `.env` and set the required values.
 
-Copy `.env.example` to `.env` and adjust values if needed.
-
-Key variables:
-
-- `PORT`
-- `DATABASE_URL`
-- `FRONTEND_ORIGIN`
-- `JWT_SECRET`
-- `JWT_EXPIRES_IN`
-
-### 3. Start Postgres and apply migrations
+3. Start Postgres and apply migrations:
 
 ```bash
 pnpm db:setup
 ```
 
-### 4. Start the API
+4. Start the API:
 
 ```bash
 pnpm start:dev
@@ -176,53 +97,15 @@ The API runs on `http://localhost:3000` by default.
 
 ## Testing
 
-BranchlyAPI has both unit tests and database-backed e2e coverage.
+- `pnpm test` runs the unit test suite.
+- `pnpm test:e2e` runs the database-backed end-to-end suite.
+- `pnpm lint` checks code quality.
+- `pnpm build` verifies the Nest app compiles cleanly.
 
-- `pnpm test` runs the unit test suite
-- `pnpm test:e2e` starts Postgres, applies migrations, and runs end-to-end tests
-- `pnpm lint` checks code quality and formatting rules
-- `pnpm build` verifies the Nest application compiles cleanly
+## Runtime Notes
 
-Useful commands:
-
-```bash
-pnpm start:dev
-pnpm build
-pnpm lint
-pnpm test
-pnpm test:e2e
-pnpm db:up
-pnpm db:down
-pnpm prisma:migrate:dev
-```
-
-## Environment
-
-Example local environment:
-
-```env
-NODE_ENV=development
-PORT=3000
-POSTGRES_DB=branchly_api
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=postgres
-POSTGRES_PORT=5432
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/branchly_api?schema=public
-FRONTEND_ORIGIN=http://localhost:5173
-JWT_SECRET=replace-this-with-a-long-random-secret-value
-JWT_EXPIRES_IN=15m
-```
-
-## API Notes
-
-- Authentication uses bearer tokens returned from `POST /auth/login`
-- Protected management routes require `Authorization: Bearer <token>`
-- Public redirects remain unauthenticated
-- Disabled links return `404` instead of redirecting
-- Re-enabled links resolve publicly again
-- Owned link responses include both `disabledAt` and `expiresAt`
-- Rate limiting is applied to auth and protected write routes
-- CORS is configured for the Branchly frontend origin, not arbitrary public origins
+- Disabled or expired links return `404` on the public redirect route.
+- Swagger docs and readiness checks are not exposed in production.
 
 ## License
 

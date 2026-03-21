@@ -1,7 +1,7 @@
 import {
   createPrismaLinkRepositoryTestContext,
   type PrismaLinkRecord,
-} from './prisma-link.repository.spec-support';
+} from '../../../test/links/support/prisma-link-repository.spec-support';
 
 describe('PrismaLinkRepository enable', () => {
   it('should enable an owned disabled link', async () => {
