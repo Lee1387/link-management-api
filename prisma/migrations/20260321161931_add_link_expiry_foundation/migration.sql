@@ -1,0 +1,2 @@
+ALTER TABLE "Link"
+ADD COLUMN "expiresAt" TIMESTAMPTZ(3);
