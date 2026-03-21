@@ -1,5 +1,4 @@
 import { type NestFastifyApplication } from '@nestjs/platform-fastify';
-import appConfig, { type AppConfig } from './../../src/config/app.config';
 import { PrismaService } from './../../src/prisma/prisma.service';
 import { createTestApp } from './../support/create-test-app';
 import {
@@ -7,6 +6,9 @@ import {
   captureTestEnvironment,
   restoreTestEnvironment,
 } from './../support/test-environment';
+import environmentConfig, {
+  type EnvironmentConfig,
+} from './../../src/config/validated-environment';
 
 type QueryRawMock = jest.Mock<
   Promise<unknown>,
@@ -36,21 +38,23 @@ describe('Health (e2e)', () => {
 
   async function createApp(
     prismaService: PrismaQueryExecutor,
-    configOverrides: Partial<AppConfig> = {},
+    configOverrides: Partial<EnvironmentConfig> = {},
   ): Promise<NestFastifyApplication> {
     return createTestApp({
       configureBuilder: (builder) =>
         builder
           .overrideProvider(PrismaService)
           .useValue(prismaService)
-          .overrideProvider(appConfig.KEY)
+          .overrideProvider(environmentConfig.KEY)
           .useValue({
-            databaseUrl: process.env.DATABASE_URL as string,
-            frontendOrigin: undefined,
-            nodeEnv: 'test',
-            port: 3000,
+            DATABASE_URL: process.env.DATABASE_URL as string,
+            FRONTEND_ORIGIN: undefined,
+            JWT_SECRET: 'test-jwt-secret-that-is-long-enough-for-validation',
+            JWT_EXPIRES_IN: '15m',
+            NODE_ENV: 'test',
+            PORT: 3000,
             ...configOverrides,
-          } satisfies AppConfig),
+          } satisfies EnvironmentConfig),
     });
   }
 
@@ -133,7 +137,7 @@ describe('Health (e2e)', () => {
       >(),
     };
     app = await createApp(prismaService, {
-      nodeEnv: 'production',
+      NODE_ENV: 'production',
     });
 
     const response = await app.inject({

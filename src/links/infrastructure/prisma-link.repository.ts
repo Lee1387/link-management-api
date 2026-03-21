@@ -1,4 +1,4 @@
-import { type Link as PrismaLink } from '@prisma/client';
+import { Prisma, type Link as PrismaLink } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import type { Link } from '../domain/link.entity';
@@ -35,6 +35,38 @@ function isPrismaUniqueConstraintError(
 @Injectable()
 export class PrismaLinkRepository implements LinkRepository {
   constructor(private readonly prismaService: PrismaService) {}
+
+  private async findOwnedLink(
+    id: string,
+    userId: string,
+  ): Promise<Link | null> {
+    const prismaLink = await this.prismaService.link.findFirst({
+      where: {
+        id,
+        userId,
+      },
+    });
+
+    if (prismaLink === null) {
+      return null;
+    }
+
+    return toLinkEntity(prismaLink);
+  }
+
+  private async updateOwnedLinkAndFetch(
+    id: string,
+    userId: string,
+    where: NonNullable<Prisma.LinkUpdateManyArgs['where']>,
+    data: Prisma.LinkUpdateManyArgs['data'],
+  ): Promise<Link | null> {
+    await this.prismaService.link.updateMany({
+      where,
+      data,
+    });
+
+    return this.findOwnedLink(id, userId);
+  }
 
   async create(input: CreateLinkInput): Promise<Link> {
     try {
@@ -84,18 +116,7 @@ export class PrismaLinkRepository implements LinkRepository {
   }
 
   async findByIdAndUserId(id: string, userId: string): Promise<Link | null> {
-    const prismaLink = await this.prismaService.link.findFirst({
-      where: {
-        id,
-        userId,
-      },
-    });
-
-    if (prismaLink === null) {
-      return null;
-    }
-
-    return toLinkEntity(prismaLink);
+    return this.findOwnedLink(id, userId);
   }
 
   async disableByIdAndUserId(
@@ -103,61 +124,35 @@ export class PrismaLinkRepository implements LinkRepository {
     userId: string,
     disabledAt: Date,
   ): Promise<Link | null> {
-    const disableResult = await this.prismaService.link.updateMany({
-      where: {
+    return this.updateOwnedLinkAndFetch(
+      id,
+      userId,
+      {
         id,
         userId,
         disabledAt: null,
       },
-      data: {
+      {
         disabledAt,
       },
-    });
-
-    const prismaLink = await this.prismaService.link.findFirst({
-      where: {
-        id,
-        userId,
-      },
-    });
-
-    if (prismaLink === null) {
-      return null;
-    }
-
-    if (disableResult.count === 0) {
-      return toLinkEntity(prismaLink);
-    }
-
-    return toLinkEntity(prismaLink);
+    );
   }
 
   async enableByIdAndUserId(id: string, userId: string): Promise<Link | null> {
-    await this.prismaService.link.updateMany({
-      where: {
+    return this.updateOwnedLinkAndFetch(
+      id,
+      userId,
+      {
         id,
         userId,
         disabledAt: {
           not: null,
         },
       },
-      data: {
+      {
         disabledAt: null,
       },
-    });
-
-    const prismaLink = await this.prismaService.link.findFirst({
-      where: {
-        id,
-        userId,
-      },
-    });
-
-    if (prismaLink === null) {
-      return null;
-    }
-
-    return toLinkEntity(prismaLink);
+    );
   }
 
   async expireByIdAndUserId(
@@ -165,27 +160,16 @@ export class PrismaLinkRepository implements LinkRepository {
     userId: string,
     expiresAt: Date,
   ): Promise<Link | null> {
-    await this.prismaService.link.updateMany({
-      where: {
+    return this.updateOwnedLinkAndFetch(
+      id,
+      userId,
+      {
         id,
         userId,
       },
-      data: {
+      {
         expiresAt,
       },
-    });
-
-    const prismaLink = await this.prismaService.link.findFirst({
-      where: {
-        id,
-        userId,
-      },
-    });
-
-    if (prismaLink === null) {
-      return null;
-    }
-
-    return toLinkEntity(prismaLink);
+    );
   }
 }

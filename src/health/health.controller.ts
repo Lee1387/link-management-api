@@ -15,15 +15,17 @@ import {
   ReadinessErrorResponseDto,
   ReadinessResponseDto as ReadinessResponseModel,
 } from './health.response';
-import appConfig, { type AppConfig } from '../config/app.config';
+import environmentConfig, {
+  type EnvironmentConfig,
+} from '../config/validated-environment';
 
 @ApiTags('health')
 @Controller('health')
 export class HealthController {
   constructor(
     private readonly healthService: HealthService,
-    @Inject(appConfig.KEY)
-    private readonly config: AppConfig,
+    @Inject(environmentConfig.KEY)
+    private readonly config: Pick<EnvironmentConfig, 'NODE_ENV'>,
   ) {}
 
   @Get()
@@ -38,7 +40,7 @@ export class HealthController {
   @ApiOkResponse({ type: ReadinessResponseModel })
   @ApiServiceUnavailableResponse({ type: ReadinessErrorResponseDto })
   getReadiness(): Promise<ReadinessResponseDto> {
-    if (this.config.nodeEnv === 'production') {
+    if (this.config.NODE_ENV === 'production') {
       throw new NotFoundException();
     }
 

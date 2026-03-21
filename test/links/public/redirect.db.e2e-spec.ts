@@ -112,6 +112,43 @@ describe('Redirect (db e2e)', () => {
     });
   });
 
+  it('GET /:shortCode should return not found when the link is expired', async () => {
+    app = await createApp();
+    const prismaService = app.get(PrismaService);
+    const email = `expired.${Date.now().toString(36)}@example.com`;
+    const shortCode = `exp${Date.now().toString(36)}x`;
+    createdEmails.add(email);
+
+    const user = await prismaService.user.create({
+      data: {
+        email,
+        passwordHash: 'hashed-password',
+      },
+    });
+
+    const link = await prismaService.link.create({
+      data: {
+        originalUrl: 'https://example.com/articles/expired-link',
+        shortCode,
+        expiresAt: new Date('2026-03-20T10:00:00.000Z'),
+        userId: user.id,
+      },
+    });
+    createdLinkIds.add(link.id);
+
+    const response = await app.inject({
+      method: 'GET',
+      url: `/${shortCode}`,
+    });
+
+    expect(response.statusCode).toBe(404);
+    expect(response.json()).toEqual({
+      message: 'Link not found.',
+      error: 'Not Found',
+      statusCode: 404,
+    });
+  });
+
   it('GET /:shortCode should redirect again after the owned link is re-enabled', async () => {
     app = await createApp();
     const email = `reenable.${Date.now().toString(36)}@example.com`;

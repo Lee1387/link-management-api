@@ -23,6 +23,7 @@ import {
 import { CurrentUser } from '../auth/http/current-user.decorator';
 import { JwtAuthGuard } from '../auth/http/jwt-auth.guard';
 import type { AuthenticatedRequestUser } from '../auth/http/authenticated-request-user';
+import type { Link } from './domain/link.entity';
 import { CreateLinkUseCase } from './application/use-cases/mutation/create-link.use-case';
 import { DisableOwnedLinkUseCase } from './application/use-cases/lifecycle/disable-owned-link.use-case';
 import { EnableOwnedLinkUseCase } from './application/use-cases/lifecycle/enable-owned-link.use-case';
@@ -60,6 +61,16 @@ export class LinksController {
     private readonly getOwnedLinkDetailsUseCase: GetOwnedLinkDetailsUseCase,
     private readonly listOwnedLinksUseCase: ListOwnedLinksUseCase,
   ) {}
+
+  private toOwnedLinkDetailsOrThrow(
+    link: Link | null,
+  ): OwnedLinkDetailsResponseDto {
+    if (link === null) {
+      throw new NotFoundException('Link not found.');
+    }
+
+    return toOwnedLinkDetailsResponseDto(link);
+  }
 
   @Get()
   @ApiOperation({
@@ -113,13 +124,9 @@ export class LinksController {
     @CurrentUser() user: AuthenticatedRequestUser,
     @Param('id') id: string,
   ): Promise<OwnedLinkDetailsResponseDto> {
-    const link = await this.getOwnedLinkDetailsUseCase.execute(id, user.id);
-
-    if (link === null) {
-      throw new NotFoundException('Link not found.');
-    }
-
-    return toOwnedLinkDetailsResponseDto(link);
+    return this.toOwnedLinkDetailsOrThrow(
+      await this.getOwnedLinkDetailsUseCase.execute(id, user.id),
+    );
   }
 
   @Patch(':id/disable')
@@ -150,13 +157,9 @@ export class LinksController {
     @CurrentUser() user: AuthenticatedRequestUser,
     @Param('id') id: string,
   ): Promise<OwnedLinkDetailsResponseDto> {
-    const link = await this.disableOwnedLinkUseCase.execute(id, user.id);
-
-    if (link === null) {
-      throw new NotFoundException('Link not found.');
-    }
-
-    return toOwnedLinkDetailsResponseDto(link);
+    return this.toOwnedLinkDetailsOrThrow(
+      await this.disableOwnedLinkUseCase.execute(id, user.id),
+    );
   }
 
   @Patch(':id/enable')
@@ -187,13 +190,9 @@ export class LinksController {
     @CurrentUser() user: AuthenticatedRequestUser,
     @Param('id') id: string,
   ): Promise<OwnedLinkDetailsResponseDto> {
-    const link = await this.enableOwnedLinkUseCase.execute(id, user.id);
-
-    if (link === null) {
-      throw new NotFoundException('Link not found.');
-    }
-
-    return toOwnedLinkDetailsResponseDto(link);
+    return this.toOwnedLinkDetailsOrThrow(
+      await this.enableOwnedLinkUseCase.execute(id, user.id),
+    );
   }
 
   @Patch(':id/expire')
@@ -228,17 +227,13 @@ export class LinksController {
     @Param('id') id: string,
     @Body() body: ExpireOwnedLinkDto,
   ): Promise<OwnedLinkDetailsResponseDto> {
-    const link = await this.expireOwnedLinkUseCase.execute(
-      id,
-      user.id,
-      new Date(body.expiresAt),
+    return this.toOwnedLinkDetailsOrThrow(
+      await this.expireOwnedLinkUseCase.execute(
+        id,
+        user.id,
+        new Date(body.expiresAt),
+      ),
     );
-
-    if (link === null) {
-      throw new NotFoundException('Link not found.');
-    }
-
-    return toOwnedLinkDetailsResponseDto(link);
   }
 
   @Post()

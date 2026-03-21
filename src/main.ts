@@ -4,14 +4,15 @@ import {
   setupOptionalCors,
   setupOptionalOpenApi,
 } from './app.bootstrap';
-import { type AppConfig } from './config/app.config';
-import appConfig from './config/app.config';
 import {
   FastifyAdapter,
   NestFastifyApplication,
 } from '@nestjs/platform-fastify';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import environmentConfig, {
+  type EnvironmentConfig,
+} from './config/validated-environment';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestFastifyApplication>(
@@ -21,7 +22,11 @@ async function bootstrap() {
       bufferLogs: true,
     },
   );
-  const { frontendOrigin, nodeEnv, port } = app.get<AppConfig>(appConfig.KEY);
+  const {
+    FRONTEND_ORIGIN: frontendOrigin,
+    NODE_ENV: nodeEnv,
+    PORT: port,
+  } = app.get<EnvironmentConfig>(environmentConfig.KEY);
 
   app.useLogger(createAppLogger(nodeEnv));
   await configureApp(app, nodeEnv);

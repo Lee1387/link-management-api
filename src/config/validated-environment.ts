@@ -1,3 +1,4 @@
+import { type ConfigType, registerAs } from '@nestjs/config';
 import { type EnvironmentVariables, validateEnv } from './env.schema';
 
 type EnvironmentSource = Record<string, unknown>;
@@ -44,3 +45,11 @@ export function loadValidatedEnvironment(
 
   return validatedEnvironment;
 }
+
+const environmentConfig = registerAs('environment', () =>
+  loadValidatedEnvironment(),
+);
+
+export type EnvironmentConfig = ConfigType<typeof environmentConfig>;
+
+export default environmentConfig;

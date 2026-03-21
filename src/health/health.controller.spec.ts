@@ -1,9 +1,9 @@
 import { NotFoundException } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
-import appConfig from '../config/app.config';
 import { HealthController } from './health.controller';
 import { HealthService } from './health.service';
 import { LivenessResponseDto, ReadinessResponseDto } from './health.response';
+import environmentConfig from '../config/validated-environment';
 
 describe('HealthController', () => {
   let healthController: HealthController;
@@ -26,9 +26,9 @@ describe('HealthController', () => {
           useValue: healthService,
         },
         {
-          provide: appConfig.KEY,
+          provide: environmentConfig.KEY,
           useValue: {
-            nodeEnv: 'test',
+            NODE_ENV: 'test',
           },
         },
       ],
@@ -74,9 +74,9 @@ describe('HealthController', () => {
           useValue: healthService,
         },
         {
-          provide: appConfig.KEY,
+          provide: environmentConfig.KEY,
           useValue: {
-            nodeEnv: 'production',
+            NODE_ENV: 'production',
           },
         },
       ],

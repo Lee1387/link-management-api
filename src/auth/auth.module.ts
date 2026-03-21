@@ -1,6 +1,5 @@
 import { JwtModule, type JwtSignOptions } from '@nestjs/jwt';
 import { Module } from '@nestjs/common';
-import authConfig, { type AuthConfig } from '../config/auth.config';
 import { RateLimitModule } from '../rate-limit/rate-limit.module';
 import { ACCESS_TOKEN_VERIFIER } from './application/ports/access-token-verifier';
 import { ACCESS_TOKEN_SIGNER } from './application/ports/access-token-signer';
@@ -16,6 +15,9 @@ import { JwtAccessTokenVerifier } from './infrastructure/jwt-access-token-verifi
 import { PrismaUserRepository } from './infrastructure/prisma-user.repository';
 import { ScryptPasswordHasher } from './infrastructure/scrypt-password-hasher';
 import { JwtAuthGuard } from './http/jwt-auth.guard';
+import environmentConfig, {
+  type EnvironmentConfig,
+} from '../config/validated-environment';
 
 @Module({
   controllers: [AuthController],
@@ -23,11 +25,11 @@ import { JwtAuthGuard } from './http/jwt-auth.guard';
     PrismaModule,
     RateLimitModule,
     JwtModule.registerAsync({
-      inject: [authConfig.KEY],
-      useFactory: (config: AuthConfig) => ({
-        secret: config.jwtSecret,
+      inject: [environmentConfig.KEY],
+      useFactory: (config: EnvironmentConfig) => ({
+        secret: config.JWT_SECRET,
         signOptions: {
-          expiresIn: config.jwtExpiresIn as NonNullable<
+          expiresIn: config.JWT_EXPIRES_IN as NonNullable<
             JwtSignOptions['expiresIn']
           >,
         },
